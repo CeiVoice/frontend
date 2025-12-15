@@ -1,21 +1,26 @@
-import menu from '../assets/menu.png'
-import './top_bar.css'
-import side_bar from '../assets/side-bar.png'
+import { PiSidebarSimpleThin } from "react-icons/pi";
+import { FiSearch } from "react-icons/fi";
+
 function Top() {
 
     return (
-        <div className="bar">
-            <button>
-                <img src={side_bar} alt="side"/>
-            </button>
-            <button>
-                <img src={menu} alt="menu" />
-            </button>
-            <p>CEIVoice</p>
-            <button className='create_button'>
-                + create
-            </button>
-        </div>
+        <header className="w-full bg-white h-16 md:h-20 flex items-center px-4 md:px-6 gap-3 md:gap-4 shadow-sm">
+            <div className="flex items-center gap-3 shrink-0">
+                <PiSidebarSimpleThin size={32} className="text-black cursor-pointer" />
+                <div className="flex flex-row items-center">
+                    <p className="text-black text-2xl" style={{ fontFamily: '"Young Serif", serif' }}>CEI</p>
+                    <p className="ml-1 text-[#4377E5] text-2xl">Voice</p>
+                </div>
+            </div>
+            <div className="flex items-center ml-5 w-full max-w-48 min-w-1 relative">
+                <input
+                    type="search"
+                    placeholder="Search"
+                    className="w-full rounded-full border border-gray-300 px-4 py-2 pr-10 text-base focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
+                />
+                <FiSearch className="absolute right-3 text-gray-500" size={18} />
+            </div>
+        </header>
     )
 }
 

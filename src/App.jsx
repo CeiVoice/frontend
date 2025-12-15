@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import './App.css'
-import Top from './components/top_bar'
 import Login from './components/login'
+import Page1 from './page1'
 
 function App() {
 
+  const [isLoggedIn, setIsLoggedIn] = useState(true) //set true to test page1
+
   return (
     <>
-      <Login />
+      {isLoggedIn ? <Page1 /> : <Login onSuccess={() => setIsLoggedIn(true)} />}
     </>
   )
 }
