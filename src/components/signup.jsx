@@ -13,11 +13,17 @@ function Signup({ onSuccess, onBack }) {
             return;
         }
 
-        const url = "https://script.google.com/macros/s/AKfycbw1atMa-V_lzvQ-QqdczeO0peeg_Xfnbl6fBVvXbrZB5Np9id3zCCf5TL-BX80n8bHZ_Q/exec"
+        const url = "http://localhost:8000/signup"
+        const payload = {
+            Email: e.target.Gmail.value,
+            Password: e.target.Password.value,
+            Fname: e.target.Fname.value,
+            Lname: e.target.Lname.value
+        };
         fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `action=signup&Fname=${encodeURIComponent(e.target.Fname.value)}&Lname=${encodeURIComponent(e.target.Lname.value)}&Gmail=${encodeURIComponent(e.target.Gmail.value)}&Password=${encodeURIComponent(e.target.Password.value)}`
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
         })
             .then(res => res.text())
             .then(message => {
