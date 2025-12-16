@@ -8,7 +8,7 @@ const Side = ({ isOpen = true }) => {
       <div className='h-full overflow-y-auto'>
         <div className='flex flex-col px-6 gap-6'>
           <button className='text-left bg-transparent text-black mt-8 font-bold hover:text-gray-400'>PLANNING</button>
-          <button className='text-left bg-transparent text-black hover:text-gray-400'>Timeline</button>
+          <button className='text-left bg-transparent text-black hover:text-gray-400'>Status</button>
           <button className='text-left bg-transparent text-black hover:text-gray-400'>Board</button>
           <button className='text-left bg-transparent text-black hover:text-gray-400'>Issues</button>
           <button className='text-left bg-transparent text-black hover:text-gray-400'>Add view</button>
