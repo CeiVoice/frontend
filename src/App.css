@@ -1,8 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Young+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 body {
     background-color: #EDEDED;
-    font-family: "Young Serif", serif;
+    font-family: 'Inter', sans-serif;
+}
+
+.font-serif {
+    font-family: 'Young Serif', serif;
 }
 
 * {

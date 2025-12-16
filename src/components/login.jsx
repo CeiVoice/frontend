@@ -37,10 +37,10 @@ function Login({ onSuccess, onBack, onRegister }) {
             <div className='bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg md:max-w-xl shadow-lg'>
                 <form onSubmit={handleSubmit} className='flex flex-col items-center p-10 gap-8 w-full'>
                     <p className='text-black text-2xl pt-5'>User Login</p>
-                    <input className='font-sans rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Email' placeholder='Example@kmitl.ac.th' required />
+                    <input className=' rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Email' placeholder='Example@kmitl.ac.th' required />
                     <div className='relative w-full'>
                         <input
-                            className='font-sans rounded-3xl w-full border block border-black pr-10 px-3 py-2'
+                            className=' rounded-3xl w-full border block border-black pr-10 px-3 py-2'
                             type={showPassword ? 'text' : 'password'}
                             name='Password'
                             placeholder='Password'
@@ -56,12 +56,12 @@ function Login({ onSuccess, onBack, onRegister }) {
                         </button>
                     </div>
 
-                    <button type="submit" className='font-sans cursor-pointer bg-[#4377E5] text-white rounded-3xl w-full h-10 hover:bg-blue-700'>Login</button>
-                    <div className='font-sans flex flex-row gap-2 '>
+                    <button type="submit" className=' cursor-pointer bg-[#4377E5] text-white rounded-3xl w-full h-10 hover:bg-blue-700'>Login</button>
+                    <div className=' flex flex-row gap-2 '>
                         <p>Don't have an account?</p>
                         <button
                             type='button'
-                            className='font-sans cursor-pointer font-bold underline text-[#4377E5] '
+                            className=' cursor-pointer font-bold underline text-[#4377E5] '
                             onClick={() => {
                                 if (onRegister) {
                                     onRegister();
