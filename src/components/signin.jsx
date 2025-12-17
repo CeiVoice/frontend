@@ -73,7 +73,7 @@ function Signin({ onSuccess, onBack, onRegister }) {
                             Sign up
                         </button>
                     </div>
-                    <hr className='w-full border-t border-black' />
+                    <hr className='w-full border-t border-gray-300' />
                     <div className='pointer-fine:hover:bg-gray-200 flex items-center justify-center gap-2 border rounded-3xl w-full px-2 py-3 cursor-pointer'>
                         <p className='flex flex-row gap-3'><FcGoogle size={24} />Sign in with Google</p>
                     </div>

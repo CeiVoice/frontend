@@ -26,7 +26,7 @@ function Top({ onToggleMenu, onCreate, onHome, userEmail }) {
             </div>
             <div className="flex items-center sm:flex-1 mx-2 ml-1 sm:mx-5 max-w-30 sm:max-w-[18rem] md:max-w-md relative">
                 <input
-                    type="search"
+                    type="text"
                     placeholder="Search..."
                     className="w-full rounded-full border border-gray-300 px-2 sm:px-4 py-2 pr-8 text-base focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
                 />
