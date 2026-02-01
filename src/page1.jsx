@@ -5,7 +5,7 @@ import Report from './components/report';
 import Home from './components/home';
 import Confirmation from './components/confirmation';
 import Success from './components/success';
-import AdminPage from './admin/admin_page';
+
 function Page1({ userEmail, userRole }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showReport, setShowReport] = useState(false);

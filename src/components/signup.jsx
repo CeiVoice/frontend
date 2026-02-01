@@ -46,7 +46,7 @@ function Signup({ onSuccess, onBack }) {
 
 
     return (
-        <div className='flex bg-gray-100 w-screen h-screen justify-center items-center'>
+        <div className='flex bg-linear-to-tl from-[#4377E5] to-[#BFCDE9] w-screen h-screen justify-center items-center'>
             <div className='bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg md:max-w-xl shadow-lg'>
                 <IoMdArrowBack
                     size={24}
@@ -60,7 +60,8 @@ function Signup({ onSuccess, onBack }) {
                     }}
                 />
                 <form onSubmit={handleSubmit} className='flex flex-col items-center p-10 gap-5 w-full'>
-                    <p className='text-black text-2xl pt-5'>Sign up</p>
+                    <img src="/src/assets/Frame_6.png" alt="Frame" className='w-auto h-auto' />
+                    <p className='text-black text-2xl self-start'>Sign up</p>
                     <input className='rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Fname' placeholder='First Name' required />
                     <input className='rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Lname' placeholder='Last Name' required />
                     <input className='rounded-3xl w-full border block border-black px-3 py-2' type="email" name='Gmail' placeholder='Example@gmail.com' required />
