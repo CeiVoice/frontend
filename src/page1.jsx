@@ -5,16 +5,19 @@ import Report from './components/report';
 import Home from './components/home';
 import Confirmation from './components/confirmation';
 import Success from './components/success';
+import Tracking from './components/tracking';
 
 function Page1({ userEmail, userRole }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showReport, setShowReport] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [showTracking, setShowTracking] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
+    const [reports, setReports] = useState([]);
 
-    const handleReportSubmit = (message) => {
-        setPendingMessage(message);
+    const handleReportSubmit = (reportData) => {
+        setPendingMessage(reportData);
         setShowReport(false);
         setShowConfirmation(true);
     };
@@ -22,6 +25,17 @@ function Page1({ userEmail, userRole }) {
     const handleConfirm = () => {
         // Handle actual submission (e.g., send to API)
         console.log('Report submitted:', pendingMessage);
+
+        // Add report to list with timestamp
+        const newReport = {
+            topicName: pendingMessage.topicName,
+            topic: pendingMessage.topic,
+            message: pendingMessage.message,
+            date: new Date().toLocaleString(),
+            status: 'Pending'
+        };
+        setReports([newReport, ...reports]);
+
         setShowConfirmation(false);
         setShowSuccess(true);
     };
@@ -34,12 +48,15 @@ function Page1({ userEmail, userRole }) {
                 onHome={() => {
                     setShowReport(false);
                     setShowConfirmation(false);
+                    setShowTracking(false);
                 }}
                 userEmail={userEmail}
             />
             <div className='flex flex-row'>
-                <Side isOpen={sidebarOpen} />
-                {userRole === 'admin' ? <AdminPage /> : <Home sidebarOpen={sidebarOpen} />}
+                <Side isOpen={sidebarOpen} onTrackingClick={() => setShowTracking(true)} />
+                {showTracking ? (
+                    <Tracking reports={reports} sidebarOpen={sidebarOpen} />
+                ) : userRole === 'admin' ? <AdminPage /> : <Home sidebarOpen={sidebarOpen} />}
             </div>
             {showReport && (
                 <div
