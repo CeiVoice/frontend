@@ -8,8 +8,7 @@ const Side = ({ isOpen = true, onTrackingClick }) => {
       <div className='h-full overflow-y-auto'>
         <div className='flex flex-col px-6 gap-6'>
           <button onClick={() => onTrackingClick?.()} className='text-left bg-transparent text-black mt-8 font-bold hover:text-gray-400'>TRACKING</button>
-          <button className='text-left bg-transparent text-black hover:text-gray-400'>Request</button>
-          <button className='text-left bg-transparent text-black hover:text-gray-400'>Admin</button>
+          <button className='text-left bg-transparent text-black hover:text-gray-400'>Organization</button>
           <button className='text-left bg-transparent text-black hover:text-gray-400'>Assignee</button>
         </div>
       </div>

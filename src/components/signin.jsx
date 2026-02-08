@@ -5,7 +5,7 @@ function Signin({ onSuccess, onBack, onRegister }) {
     const [showPassword, setShowPassword] = useState(false);
     const handleSubmit = (e) => {
         e.preventDefault();
-        const url = "https://script.google.com/macros/s/AKfycbw1atMa-V_lzvQ-QqdczeO0peeg_Xfnbl6fBVvXbrZB5Np9id3zCCf5TL-BX80n8bHZ_Q/exec"
+        const url = "http://localhost/auth/signup"
         fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },

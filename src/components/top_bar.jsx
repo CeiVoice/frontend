@@ -1,8 +1,6 @@
 import { PiSidebarSimpleThin } from "react-icons/pi";
 import { FiSearch } from "react-icons/fi";
-import { LuBell } from "react-icons/lu";
-import { GoGear } from "react-icons/go";
-
+import Dropbar from './sub/organization'
 
 function Top({ onToggleMenu, onCreate, onHome, userEmail }) {
     return (
@@ -19,8 +17,8 @@ function Top({ onToggleMenu, onCreate, onHome, userEmail }) {
                         className="flex flex-row cursor-pointer"
                         onClick={() => onHome ? onHome() : window.location.assign('/')}
                     >
-                        <p className="text-black text-xl sm:text-2xl font-serif">CEI</p>
-                        <p className="ml-1 text-[#4377E5] text-xl sm:text-2xl font-serif">Voice</p>
+                        <p className="text-black text-xl sm:text-2xl font-serif select-none">CEI</p>
+                        <p className="ml-1 text-[#4377E5] text-xl sm:text-2xl font-serif select-none">Voice</p>
                     </button>
                 </div>
             </div>
@@ -28,7 +26,7 @@ function Top({ onToggleMenu, onCreate, onHome, userEmail }) {
                 <input
                     type="text"
                     placeholder="Search..."
-                    className="w-full rounded-full border border-gray-300 px-2 sm:px-4 py-2 pr-8 text-base focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
+                    className="select-none w-full rounded-full border border-gray-300 px-2 sm:px-4 py-2 pr-8 text-base focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
                 />
                 <FiSearch className="absolute right-3 text-gray-500" size={18} />
             </div>
@@ -39,16 +37,16 @@ function Top({ onToggleMenu, onCreate, onHome, userEmail }) {
                     onClick={onCreate}
                     className='flex pointer-fine:hover:bg-blue-700 sm:ml-3 sm:mr-2 items-center justify-center gap-2 border rounded-3xl px-3 sm:px-4 h-10 w-10 sm:h-10 sm:w-25  cursor-pointer bg-[#4377E5] text-white shrink-0'
                 >
-                    <p className="text-base">+</p>
-                    <p className='hidden sm:block'>Create</p>
+                    <p className="text-base select-none">+</p>
+                    <p className='hidden sm:block select-none'>Create</p>
                 </button>
                 {userEmail && (
                     <p className="hidden md:block text-sm text-gray-700 max-w-45 truncate" title={userEmail}>
                         {userEmail}
                     </p>
                 )}
-                <LuBell size={24} className="text-black cursor-pointer" />
-                <GoGear size={24} className="text-black cursor-pointer" />
+                <Dropbar className="mr-5"/>
+
             </div>
         </header>
     )

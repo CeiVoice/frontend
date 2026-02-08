@@ -5,7 +5,7 @@ import Signup from './components/signup'
 import Page1 from './page1'
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)//set true to test page1
+  const [isLoggedIn, setIsLoggedIn] = useState(true)//set true to test page1
   const [screen, setScreen] = useState('signin') // 'signin' or 'signup'
   const [userEmail, setUserEmail] = useState('')
 
