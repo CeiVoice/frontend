@@ -6,15 +6,18 @@ import Home from './components/home';
 import Confirmation from './components/confirmation';
 import Success from './components/success';
 import Tracking from './components/tracking';
+import AdminPage from './components/AdminPage';
+import { EXAMPLE_TICKETS } from './components/constants/ticketExamples';
 
-function Page1({ userEmail, userRole }) {
+function Page1({ userEmail, userRole, onSignout }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showReport, setShowReport] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showTracking, setShowTracking] = useState(false);
+    const [showAdmin, setShowAdmin] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
-    const [reports, setReports] = useState([]);
+    const [reports, setReports] = useState(EXAMPLE_TICKETS);
 
     const handleReportSubmit = (reportData) => {
         setPendingMessage(reportData);
@@ -49,14 +52,30 @@ function Page1({ userEmail, userRole }) {
                     setShowReport(false);
                     setShowConfirmation(false);
                     setShowTracking(false);
+                    setShowAdmin(false);
                 }}
                 userEmail={userEmail}
+                onSignout={onSignout}
             />
             <div className='flex flex-row'>
-                <Side isOpen={sidebarOpen} onTrackingClick={() => setShowTracking(true)} />
+                <Side
+                    isOpen={sidebarOpen}
+                    onTrackingClick={() => {
+                        setShowTracking(true);
+                        setShowAdmin(false);
+                    }}
+                    onAdminClick={() => {
+                        setShowAdmin(true);
+                        setShowTracking(false);
+                    }}
+                />
                 {showTracking ? (
                     <Tracking reports={reports} sidebarOpen={sidebarOpen} />
-                ) : userRole === 'admin' ? <AdminPage /> : <Home sidebarOpen={sidebarOpen} />}
+                ) : showAdmin ? (
+                    <AdminPage reports={reports} sidebarOpen={sidebarOpen} />
+                ) : (
+                    <Home sidebarOpen={sidebarOpen} reports={reports} />
+                )}
             </div>
             {showReport && (
                 <div

@@ -3,32 +3,32 @@ import { FcGoogle } from "react-icons/fc";
 import { IoMdArrowBack } from "react-icons/io";
 function Signin({ onSuccess, onBack, onRegister }) {
     const [showPassword, setShowPassword] = useState(false);
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const url = "http://localhost/auth/signup"
-        fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `action=login&Gmail=${encodeURIComponent(e.target.Gmail.value)}&Password=${encodeURIComponent(e.target.Password.value)}`
-        })
-            .then(res => res.text())
-            .then(message => {
-                console.log('Server response:', message); // Debug log
-                const msg = message.toLowerCase().trim();
-                if (msg.includes('ok') || msg.includes('success') || msg.includes('login successful')) {
-                    onSuccess?.(e.target.Gmail.value);
-                } else if (msg.includes('wrong') || msg.includes('incorrect')) {
-                    alert('Wrong email or password.');
-                } else if (msg.includes('not found') || msg.includes('does not exist')) {
-                    alert('Account does not exist.');
-                } else {
-                    alert('Unexpected response: ' + message);
-                }
+        const url = "http://localhost/auth/signin"
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    Email: e.target.Gmail.value,
+                    Password: e.target.Password.value
+                })
             })
-            .catch(err => {
-                console.log(err);
-                alert('Something went wrong. Please try again.');
-            })
+
+            const data = await res.json()
+            if (data?.success && data?.token) {
+                localStorage.setItem('authToken', data.token)
+                onSuccess?.(e.target.Gmail.value)
+                return
+            }
+
+            const message = data?.error || 'Login failed.'
+            alert(message)
+        } catch (err) {
+            console.log(err);
+            alert('Something went wrong. Please try again.');
+        }
     }
 
 

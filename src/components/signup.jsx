@@ -13,7 +13,7 @@ function Signup({ onSuccess, onBack }) {
             return;
         }
 
-        const url = "http://localhost:8000/signup"
+        const url = "http://localhost/auth/signup"
         const payload = {
             Email: e.target.Gmail.value,
             Password: e.target.Password.value,
