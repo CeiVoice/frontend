@@ -82,7 +82,7 @@ export default function Dropbar({ className = '' }) {
         console.log('Decoded token:', decoded)
 
         // Fetch user's memberships
-        const url = `http://localhost/api/organizations/member/user/${decoded.userId}`
+        const url = `http://localhost/api/organizations/member/user/${decoded.id}`
         console.log('Fetching from:', url)
 
         const res = await fetch(url, {
@@ -97,7 +97,6 @@ export default function Dropbar({ className = '' }) {
           const data = await res.json()
           console.log('Member data received:', data)
 
-          // Extract members array from response
           const members = data.result || []
           console.log('Members:', members)
 
@@ -107,26 +106,11 @@ export default function Dropbar({ className = '' }) {
             return
           }
 
-          // Fetch organization details for each membership
-          const orgPromises = members.map(member =>
-            fetch(`http://localhost/api/organizations/organization/${member.OrganizationId}`, {
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              }
-            }).then(r => r.json())
-          )
-
-          const orgResults = await Promise.all(orgPromises)
-          console.log('Organization results:', orgResults)
-
-          // Combine organization data with member data
-          const orgsWithMembers = orgResults.map((orgData, index) => ({
-            id: orgData.id,
-            name: orgData.Orgname,
-            members: [], // You can fetch members per org if needed
-            isAdmin: members[index].isAdmin,
-            createdAt: orgData.CreateAt
+          const orgsWithMembers = members.map((member) => ({
+            id: member.OrganizationId,
+            name: member.OrgName,
+            members: [],
+            isAdmin: member.isAdmin,
           }))
 
           console.log('Final organizations:', orgsWithMembers)
@@ -149,62 +133,62 @@ export default function Dropbar({ className = '' }) {
       {showInvite && <InviteOrg onClose={() => setShowInvite(false)} />}
       {showCreateOrg && <CreateOrganization onClose={() => setShowCreateOrg(false)} onCreate={handleCreateOrganization} />}
       <Menu as="div" className={`relative inline-block ${className}`}>
-        <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 select-none">
+        <MenuButton className="inline-flex justify-center gap-x-1.5 bg-white px-3 py-2 rounded-md w-full font-semibold text-gray-900 text-sm select-none">
           {selectedOrg ? selectedOrg.name : 'No organization'}
         </MenuButton>
 
         <MenuItems
           transition
-          className="absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-white shadow-lg outline-1 outline-black/5 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+          className="right-0 z-10 absolute bg-white data-closed:opacity-0 shadow-lg mt-2 rounded-md outline-1 outline-black/5 w-80 data-closed:scale-95 origin-top-right transition data-enter:duration-100 data-leave:duration-75 data-leave:ease-in data-enter:ease-out data-closed:transform"
         >
-          <div className="py-1 mr-5">
-            <div className='ml-5 mt-5 mb-5 space-y-3'>
+          <div className="mr-5 py-1">
+            <div className='space-y-3 mt-5 mb-5 ml-5'>
               <div className='font-semibold text-gray-800'>Organizations ({organizations.length})</div>
-              <div className='max-h-64 overflow-y-auto space-y-2'>
+              <div className='space-y-2 max-h-64 overflow-y-auto'>
                 {organizations.length === 0 ? (
-                  <p className='text-xs text-gray-500'>No organizations yet</p>
+                  <p className='text-gray-500 text-xs'>No organizations yet</p>
                 ) : (
                   organizations.map((org) => (
                     <div
                       key={org.id}
-                      className='flex flex-row items-center gap-2 border rounded-lg p-2 hover:bg-gray-50'
+                      className='flex flex-row items-center gap-2 hover:bg-gray-50 p-2 border rounded-lg'
                     >
                       <div
                         className='flex-1 cursor-pointer'
                         onClick={() => handleSelectOrganization(org)}
                       >
-                        <p className='font-semibold text-sm text-gray-800'>{org.name}</p>
-                        <div className='flex justify-between text-xs text-gray-500'>
+                        <p className='font-semibold text-gray-800 text-sm'>{org.name}</p>
+                        <div className='flex justify-between text-gray-500 text-xs'>
                           <p>Members: {org.members.length}</p>
                           <p>Owner</p>
                         </div>
                       </div>
                       <button
                         type="button"
-                        className='shrink-0 text-gray-400 hover:text-red-600 transition-colors'
+                        className='text-gray-400 hover:text-red-600 transition-colors shrink-0'
                         onClick={(e) => {
                           e.stopPropagation()
                           handleDeleteOrganization(org.id)
                         }}
                         title="Delete organization"
                       >
-                        <span className='text-xl font-bold'>×</span>
+                        <span className='font-bold text-xl'>×</span>
                       </button>
                     </div>
                   ))
                 )}
               </div>
 
-              <div className='border-t pt-3'>
-                <div className='flex flex-row justify-between mr-2 gap-2'>
-                  <button className='flex-1 flex flex-row border-2 rounded-2xl px-2 py-1 gap-2 items-center cursor-pointer select-none hover:bg-gray-100 justify-center'>
+              <div className='pt-3 border-t'>
+                <div className='flex flex-row justify-between gap-2 mr-2'>
+                  <button className='flex flex-row flex-1 justify-center items-center gap-2 hover:bg-gray-100 px-2 py-1 border-2 rounded-2xl cursor-pointer select-none'>
                     <IoSettingsOutline size={20} />
                     <p className='text-sm'>Setting</p>
                   </button>
                   <MenuItem>
                     <button
                       type="button"
-                      className='flex-1 flex flex-row border-2 rounded-2xl px-2 py-1 gap-2 items-center cursor-pointer select-none hover:bg-gray-100 justify-center'
+                      className='flex flex-row flex-1 justify-center items-center gap-2 hover:bg-gray-100 px-2 py-1 border-2 rounded-2xl cursor-pointer select-none'
                       onClick={() => setShowInvite(true)}
                     >
                       <TiUserAddOutline size={20} />
@@ -214,7 +198,7 @@ export default function Dropbar({ className = '' }) {
                 </div>
                 <button
                   type="button"
-                  className='w-full mt-2 px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold hover:bg-gray-100 cursor-pointer select-none'
+                  className='hover:bg-gray-100 mt-2 px-3 py-2 border border-gray-300 rounded-lg w-full font-semibold text-sm cursor-pointer select-none'
                   onClick={() => setShowCreateOrg(true)}
                 >
                   + Create Organization
