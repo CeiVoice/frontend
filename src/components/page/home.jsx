@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { useOutletContext } from 'react-router-dom'
 
-const Home = ({ sidebarOpen = true }) => {
+const Home = () => {
+    const { sidebarOpen = true } = useOutletContext() ?? {}
     const [selectedOrg, setSelectedOrg] = useState(null)
     const [tickets, setTickets] = useState([])
     const [loading, setLoading] = useState(false)

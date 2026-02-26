@@ -1,10 +1,12 @@
 import React from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { LuSend, LuWrench } from "react-icons/lu";
 import { MdAccessTime } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io"
 import { FiSearch } from "react-icons/fi";
 
-const Tracking = ({ reports, sidebarOpen }) => {
+const Tracking = () => {
+    const { reports = [], sidebarOpen } = useOutletContext() ?? {};
     const containerClasses = `w-full h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 

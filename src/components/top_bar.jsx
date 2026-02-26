@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PiSidebarSimpleThin } from "react-icons/pi";
 import { FiSearch } from "react-icons/fi";
 import Dropbar from './organization/organization'
 
-function Top({ onToggleMenu, onCreate, onHome, onSignout, userEmail }) {
+function Top({ onToggleMenu, onCreate, onSignout, userEmail }) {
     const [showSignout, setShowSignout] = useState(false);
+    const navigate = useNavigate();
     return (
         <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white h-16 md:h-20 flex items-center px-3 sm:px-4 md:px-6 gap-2 sm:gap-3 md:gap-4 border border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-1 sm:ml-0">
@@ -17,7 +19,7 @@ function Top({ onToggleMenu, onCreate, onHome, onSignout, userEmail }) {
                     <button
                         type="button"
                         className="flex flex-row cursor-pointer"
-                        onClick={() => onHome ? onHome() : window.location.assign('/')}
+                        onClick={() => navigate('/home')}
                     >
                         <p className="text-black text-xl sm:text-2xl font-serif select-none">CEI</p>
                         <p className="ml-1 text-[#4377E5] text-xl sm:text-2xl font-serif select-none">Voice</p>

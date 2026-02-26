@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import Top from './components/top_bar';
 import Side from './components/side_bar';
 import Report from './components/ticket/report';
-import Home from './components/page/home';
 import Confirmation from './components/ticket/confirmation';
 import Success from './components/ticket/success';
-import Tracking from './components/page/tracking';
-import AdminPage from './components/page/AdminPage';
 import { EXAMPLE_TICKETS } from './components/constants/ticketExamples';
 
-function Page1({ userEmail, userRole, onSignout }) {
+function Layout({ userEmail, onSignout }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showReport, setShowReport] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [showTracking, setShowTracking] = useState(false);
-    const [showAdmin, setShowAdmin] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
     const [reports, setReports] = useState(EXAMPLE_TICKETS);
 
@@ -26,10 +22,7 @@ function Page1({ userEmail, userRole, onSignout }) {
     };
 
     const handleConfirm = () => {
-        // Handle actual submission (e.g., send to API)
         console.log('Report submitted:', pendingMessage);
-
-        // Add report to list with timestamp
         const newReport = {
             topicName: pendingMessage.topicName,
             topic: pendingMessage.topic,
@@ -38,7 +31,6 @@ function Page1({ userEmail, userRole, onSignout }) {
             status: 'Pending'
         };
         setReports([newReport, ...reports]);
-
         setShowConfirmation(false);
         setShowSuccess(true);
     };
@@ -48,34 +40,12 @@ function Page1({ userEmail, userRole, onSignout }) {
             <Top
                 onToggleMenu={() => setSidebarOpen((v) => !v)}
                 onCreate={() => setShowReport(true)}
-                onHome={() => {
-                    setShowReport(false);
-                    setShowConfirmation(false);
-                    setShowTracking(false);
-                    setShowAdmin(false);
-                }}
                 userEmail={userEmail}
                 onSignout={onSignout}
             />
             <div className='flex flex-row'>
-                <Side
-                    isOpen={sidebarOpen}
-                    onTrackingClick={() => {
-                        setShowTracking(true);
-                        setShowAdmin(false);
-                    }}
-                    onAdminClick={() => {
-                        setShowAdmin(true);
-                        setShowTracking(false);
-                    }}
-                />
-                {showTracking ? (
-                    <Tracking reports={reports} sidebarOpen={sidebarOpen} />
-                ) : showAdmin ? (
-                    <AdminPage reports={reports} sidebarOpen={sidebarOpen} />
-                ) : (
-                    <Home sidebarOpen={sidebarOpen} reports={reports} />
-                )}
+                <Side isOpen={sidebarOpen} />
+                <Outlet context={{ reports, sidebarOpen }} />
             </div>
             {showReport && (
                 <div
@@ -132,4 +102,4 @@ function Page1({ userEmail, userRole, onSignout }) {
     );
 }
 
-export default Page1;
+export default Layout;
