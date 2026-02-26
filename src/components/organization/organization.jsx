@@ -200,10 +200,6 @@ export default function Dropbar({ className = '' }) {
 
               <div className='pt-3 border-t'>
                 <div className='flex flex-row justify-between gap-2 mr-2'>
-                  <button className='flex flex-row flex-1 justify-center items-center gap-2 hover:bg-gray-100 px-2 py-1 border-2 rounded-2xl cursor-pointer select-none'>
-                    <IoSettingsOutline size={20} />
-                    <p className='text-sm'>Setting</p>
-                  </button>
                   <MenuItem>
                     <button
                       type="button"

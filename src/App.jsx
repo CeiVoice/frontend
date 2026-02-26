@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import Signin from './components/signin'
-import Signup from './components/signup'
+import Signin from './components/auth/signin'
+import Signup from './components/auth/signup'
 import Page1 from './page1'
 
 function App() {

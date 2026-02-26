@@ -39,7 +39,7 @@ const Report = ({ userEmail, sidebarOpen, setReportRef, onBack, onSubmit, isModa
                             </p>
                         </div>
                     )}
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 sm:mt-6 lg:mt-8'>
+                    <div className='gap-4 mt-4 sm:mt-6 lg:mt-8'>
                         <div>
                             <p className='text-lg font-semibold mb-2'>Title</p>
                             <input
@@ -50,20 +50,6 @@ const Report = ({ userEmail, sidebarOpen, setReportRef, onBack, onSubmit, isModa
                                 className="w-full p-3 rounded-lg border border-black bg-white focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
                                 required
                             />
-                        </div>
-                        <div>
-                            <p className='text-lg font-semibold mb-2'>Topic Category</p>
-                            <select
-                                value={topic}
-                                onChange={(e) => setTopic(e.target.value)}
-                                className="w-full p-3 rounded-lg border border-black bg-white focus:outline-none focus:ring-2 focus:ring-[#4377E5]"
-                            >
-                                <option value="technical support">Technical Support</option>
-                                <option value="bug report">Bug Report</option>
-                                <option value="feature request">Feature Request</option>
-                                <option value="general inquiry">General Inquiry</option>
-                                <option value="billing">Billing</option>
-                            </select>
                         </div>
                     </div>
                     <p className='text-lg font-semibold mt-4 sm:mt-6 lg:mt-8'>Request Message</p>

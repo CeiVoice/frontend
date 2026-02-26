@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import Top from './components/top_bar';
 import Side from './components/side_bar';
-import Report from './components/report';
-import Home from './components/home';
-import Confirmation from './components/confirmation';
-import Success from './components/success';
-import Tracking from './components/tracking';
-import AdminPage from './components/AdminPage';
+import Report from './components/ticket/report';
+import Home from './components/page/home';
+import Confirmation from './components/ticket/confirmation';
+import Success from './components/ticket/success';
+import Tracking from './components/page/tracking';
+import AdminPage from './components/page/AdminPage';
 import { EXAMPLE_TICKETS } from './components/constants/ticketExamples';
 
 function Page1({ userEmail, userRole, onSignout }) {
