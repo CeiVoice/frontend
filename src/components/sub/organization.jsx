@@ -13,12 +13,86 @@ export default function Dropbar({ className = '' }) {
   const [organizations, setOrganizations] = useState(ORGANIZATIONS)
   const [selectedOrg, setSelectedOrg] = useState(null)
 
-  const handleCreateOrganization = (newOrg) => {
-    const updatedOrgs = [...organizations, newOrg]
-    setOrganizations(updatedOrgs)
-    // Save to localStorage for persistence
-    localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
-    console.log('Organization created:', newOrg)
+  const fetchUserOrganizations = async () => {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.log('No auth token found')
+      return
+    }
+
+    try {
+      const decoded = jwtDecode(token)
+      console.log('Decoded token:', decoded)
+
+      // Fetch user's memberships
+      const url = `http://localhost/api/organizations/member/user/${decoded.id}`
+      console.log('Fetching from:', url)
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        console.log('Member data received:', data)
+
+        const members = data.result || []
+        console.log('Members:', members)
+
+        if (!Array.isArray(members) || members.length === 0) {
+          console.log('No memberships found')
+          setOrganizations([])
+          return
+        }
+
+        const orgsWithMembers = await Promise.all(
+          members.map(async (member) => {
+            // Fetch member count for each organization
+            let memberCount = 0
+            try {
+              const memberRes = await fetch(`http://localhost/api/organizations/member/org/${member.OrganizationId}`, {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+              })
+              if (memberRes.ok) {
+                const memberData = await memberRes.json()
+                memberCount = memberData.result?.length || 0
+              }
+            } catch (err) {
+              console.error('Error fetching member count:', err)
+            }
+
+            return {
+              id: member.OrganizationId,
+              name: member.OrgName,
+              memberCount: memberCount,
+              isAdmin: member.isAdmin,
+            }
+          })
+        )
+
+        console.log('Final organizations:', orgsWithMembers)
+        setOrganizations(orgsWithMembers)
+        localStorage.setItem('organizations', JSON.stringify(orgsWithMembers))
+      } else {
+        const errorData = await res.json()
+        console.error('Failed to fetch organizations:', res.status, errorData)
+      }
+    } catch (err) {
+      console.error('Error fetching organizations:', err);
+    }
+  }
+
+  const handleCreateOrganization = () => {
+    // Just refetch the organizations list
+    fetchUserOrganizations()
   }
 
   const handleSelectOrganization = (org) => {
@@ -70,67 +144,12 @@ export default function Dropbar({ className = '' }) {
   }, [])
 
   useEffect(() => {
-    const fetchUserOrganizations = async () => {
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        console.log('No auth token found')
-        return
-      }
-
-      try {
-        const decoded = jwtDecode(token)
-        console.log('Decoded token:', decoded)
-
-        // Fetch user's memberships
-        const url = `http://localhost/api/organizations/member/user/${decoded.id}`
-        console.log('Fetching from:', url)
-
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          console.log('Member data received:', data)
-
-          const members = data.result || []
-          console.log('Members:', members)
-
-          if (!Array.isArray(members) || members.length === 0) {
-            console.log('No memberships found')
-            setOrganizations([])
-            return
-          }
-
-          const orgsWithMembers = members.map((member) => ({
-            id: member.OrganizationId,
-            name: member.OrgName,
-            members: [],
-            isAdmin: member.isAdmin,
-          }))
-
-          console.log('Final organizations:', orgsWithMembers)
-          setOrganizations(orgsWithMembers)
-          localStorage.setItem('organizations', JSON.stringify(orgsWithMembers))
-        } else {
-          const errorData = await res.json()
-          console.error('Failed to fetch organizations:', res.status, errorData)
-        }
-      } catch (err) {
-        console.error('Error fetching organizations:', err);
-      }
-    }
-
     fetchUserOrganizations()
   }, [])
 
   return (
     <>
-      {showInvite && <InviteOrg onClose={() => setShowInvite(false)} />}
+      {showInvite && <InviteOrg onClose={() => setShowInvite(false)} onInviteSuccess={fetchUserOrganizations} />}
       {showCreateOrg && <CreateOrganization onClose={() => setShowCreateOrg(false)} onCreate={handleCreateOrganization} />}
       <Menu as="div" className={`relative inline-block ${className}`}>
         <MenuButton className="inline-flex justify-center gap-x-1.5 bg-white px-3 py-2 rounded-md w-full font-semibold text-gray-900 text-sm select-none">
@@ -159,8 +178,8 @@ export default function Dropbar({ className = '' }) {
                       >
                         <p className='font-semibold text-gray-800 text-sm'>{org.name}</p>
                         <div className='flex justify-between text-gray-500 text-xs'>
-                          <p>Members: {org.members.length}</p>
-                          <p>Owner</p>
+                          <p>Members: {org.memberCount || 0}</p>
+                          <p>{org.isAdmin ? 'Admin' : 'Member'}</p>
                         </div>
                       </div>
                       <button

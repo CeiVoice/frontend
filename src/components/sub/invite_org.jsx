@@ -1,62 +1,133 @@
 import { useState } from 'react'
 import { ROLE_OPTIONS } from './roleOptions'
 
-function InviteOrg({ onClose }) {
+function InviteOrg({ onClose, onInviteSuccess }) {
     const [roleOpen, setRoleOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState(ROLE_OPTIONS[0])
+    const [emails, setEmails] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+
+    const handleInvite = async () => {
+        setError('')
+        setSuccess('')
+        
+        if (!emails.trim()) {
+            setError('Please enter at least one email')
+            return
+        }
+
+        const selectedOrg = JSON.parse(localStorage.getItem('selectedOrganization'))
+        if (!selectedOrg) {
+            setError('No organization selected')
+            return
+        }
+
+        const authToken = localStorage.getItem('authToken')
+        if (!authToken) {
+            setError('No authentication token found')
+            return
+        }
+
+        setLoading(true)
+        const emailList = emails.split(',').map(e => e.trim()).filter(e => e)
+        const isAdmin = selectedRole.id === 'admin'
+
+        try {
+            for (const email of emailList) {
+                const response = await fetch('http://localhost/api/organizations/member', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        OrganizationId: selectedOrg.id,
+                        email: email,
+                        isAdmin: isAdmin
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || `Failed to invite ${email}`)
+                }
+            }
+
+            setSuccess(`Successfully invited ${emailList.length} member(s)`)
+            setEmails('')
+            
+            // Refresh the organizations list
+            if (onInviteSuccess) {
+                onInviteSuccess()
+            }
+            
+            setTimeout(() => {
+                onClose()
+            }, 1500)
+        } catch (err) {
+            setError(err.message || 'Failed to invite members')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 backdrop-blur-sm"
             onClick={onClose}
             role="presentation"
         >
             <div
-                className="w-88 max-w-[90vw] rounded-2xl border border-white/10 bg-[#1b1b1d]/95 p-5 text-white shadow-2xl"
+                className="bg-[#1b1b1d]/95 shadow-2xl p-5 border border-white/10 rounded-2xl w-88 max-w-[90vw] text-white"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-center">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5">
+                <div className="flex justify-center items-center">
+                    <div className="flex justify-center items-center bg-white/5 border border-white/15 rounded-full w-11 h-11">
                         <span className="text-base">+</span>
                     </div>
                 </div>
-                <h2 className="mt-3 text-center text-lg font-semibold">Add members</h2>
-                <p className="mt-1 text-center text-xs text-white/60">
+                <h2 className="mt-3 font-semibold text-lg text-center">Add members</h2>
+                <p className="mt-1 text-white/60 text-xs text-center">
                     Type or paste emails below, separated by commas
                 </p>
 
-                <label className="mt-4 block text-xs text-white/60">Emails</label>
+                <label className="block mt-4 text-white/60 text-xs">Emails</label>
                 <input
                     type="text"
                     placeholder="Search names or emails"
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/40 outline-none focus:border-white/30"
+                    value={emails}
+                    onChange={(e) => setEmails(e.target.value)}
+                    className="bg-white/5 mt-2 px-3 py-2 border border-white/10 focus:border-white/30 rounded-lg outline-none w-full text-white text-sm placeholder-white/40"
                 />
 
                 <div className="mt-4">
-                    <p className="text-xs text-white/60">Select role</p>
+                    <p className="text-white/60 text-xs">Select role</p>
                     <button
                         type="button"
-                        className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-sm cursor-pointer"
+                        className="bg-white/5 mt-2 px-3 py-2 border border-white/10 rounded-lg w-full text-sm text-left cursor-pointer"
                         onClick={() => setRoleOpen((v) => !v)}
                     >
                         <span className="font-medium">{selectedRole.label}</span>
-                        <span className="mt-1 block text-xs text-white/60">
+                        <span className="block mt-1 text-white/60 text-xs">
                             {selectedRole.description}
                         </span>
                     </button>
                     {roleOpen && (
-                        <div className="mt-2 rounded-lg border border-white/10 bg-[#18181a]">
+                        <div className="bg-[#18181a] mt-2 border border-white/10 rounded-lg">
                             {ROLE_OPTIONS.map((role) => (
                                 <button
                                     key={role.id}
                                     type="button"
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-white/5"
+                                    className="hover:bg-white/5 px-3 py-2 w-full text-sm text-left"
                                     onClick={() => {
                                         setSelectedRole(role)
                                         setRoleOpen(false)
                                     }}
                                 >
                                     <span className="font-medium">{role.label}</span>
-                                    <span className="mt-1 block text-xs text-white/60">
+                                    <span className="block mt-1 text-white/60 text-xs">
                                         {role.description}
                                     </span>
                                 </button>
@@ -65,12 +136,26 @@ function InviteOrg({ onClose }) {
                     )}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
+                {error && (
+                    <div className="bg-red-500/20 mt-3 p-2 border border-red-500/50 rounded-lg">
+                        <p className="text-red-200 text-xs">{error}</p>
+                    </div>
+                )}
+
+                {success && (
+                    <div className="bg-green-500/20 mt-3 p-2 border border-green-500/50 rounded-lg">
+                        <p className="text-green-200 text-xs">{success}</p>
+                    </div>
+                )}
+
+                <div className="flex justify-between items-center mt-4">
                     <button
                         type="button"
-                        className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black"
+                        className="bg-white disabled:opacity-50 px-4 py-2 rounded-lg font-semibold text-black text-xs disabled:cursor-not-allowed"
+                        onClick={handleInvite}
+                        disabled={loading}
                     >
-                        Invite
+                        {loading ? 'Inviting...' : 'Invite'}
                     </button>
                 </div>
             </div>
