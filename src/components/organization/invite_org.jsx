@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { ROLE_OPTIONS } from './roleOptions'
+import { DEPARTMENTS } from '../constants/departments'
 
 function InviteOrg({ onClose, onInviteSuccess }) {
     const [roleOpen, setRoleOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState(ROLE_OPTIONS[0])
+    const [deptOpen, setDeptOpen] = useState(false)
+    const [selectedDept, setSelectedDept] = useState('')
+    const [deptSearch, setDeptSearch] = useState('')
     const [emails, setEmails] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -45,7 +49,8 @@ function InviteOrg({ onClose, onInviteSuccess }) {
                     body: JSON.stringify({
                         OrganizationId: selectedOrg.id,
                         email: email,
-                        isAdmin: isAdmin
+                        isAdmin: isAdmin,
+                        department: selectedDept || null
                     })
                 })
 
@@ -101,6 +106,51 @@ function InviteOrg({ onClose, onInviteSuccess }) {
                     onChange={(e) => setEmails(e.target.value)}
                     className="bg-white/5 mt-2 px-3 py-2 border border-white/10 focus:border-white/30 rounded-lg outline-none w-full text-white text-sm placeholder-white/40"
                 />
+
+                <div className="mt-4">
+                    <p className="text-white/60 text-xs">Department</p>
+                    <div className="relative mt-2">
+                        <button
+                            type="button"
+                            className="bg-white/5 px-3 py-2 border border-white/10 rounded-lg w-full text-sm text-left cursor-pointer"
+                            onClick={() => { setDeptOpen((v) => !v); setDeptSearch('') }}
+                        >
+                            <span className={selectedDept ? 'text-white' : 'text-white/40'}>
+                                {selectedDept || 'Select a department'}
+                            </span>
+                        </button>
+                        {deptOpen && (
+                            <div className="z-50 absolute bg-[#18181a] mt-1 border border-white/10 rounded-lg w-full max-h-48 overflow-y-auto">
+                                <div className="top-0 sticky bg-[#18181a] px-3 pt-2 pb-1">
+                                    <input
+                                        type="text"
+                                        placeholder="Search department..."
+                                        value={deptSearch}
+                                        onChange={(e) => setDeptSearch(e.target.value)}
+                                        className="bg-white/5 px-2 py-1 border border-white/10 rounded w-full text-white text-xs placeholder-white/40 outline-none"
+                                        autoFocus
+                                    />
+                                </div>
+                                {DEPARTMENTS
+                                    .filter((d) => d.toLowerCase().includes(deptSearch.toLowerCase()))
+                                    .map((dept) => (
+                                        <button
+                                            key={dept}
+                                            type="button"
+                                            className="hover:bg-white/5 px-3 py-2 w-full text-sm text-left"
+                                            onClick={() => {
+                                                setSelectedDept(dept)
+                                                setDeptOpen(false)
+                                            }}
+                                        >
+                                            {dept}
+                                        </button>
+                                    ))
+                                }
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 <div className="mt-4">
                     <p className="text-white/60 text-xs">Select role</p>
