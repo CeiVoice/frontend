@@ -27,6 +27,7 @@ const TicketDetail = ({ ticket, onBack }) => {
         ticket.assignedTo ? [ticket.assignedTo] : []
     );
     const [timeline, setTimeline] = useState(ticket.timeline ?? []);
+    const [editNote, setEditNote] = useState('');
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [assigneeSearch, setAssigneeSearch] = useState('');
 
@@ -38,11 +39,12 @@ const TicketDetail = ({ ticket, onBack }) => {
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-        const newStep = { status: editStatus.toUpperCase(), date: dateStr };
+        const newStep = { status: editStatus.toUpperCase(), date: dateStr, detail: editNote.trim() };
         setTimeline(prev => [...prev, newStep]);
         ticket.status = editStatus;
         ticket.assignedTo = editAssignees[0] ?? '';
         ticket.timeline = [...timeline, newStep];
+        setEditNote('');
         setIsEditing(false);
         setShowAssigneeDropdown(false);
     };
@@ -50,6 +52,7 @@ const TicketDetail = ({ ticket, onBack }) => {
     const handleRevert = () => {
         setEditStatus(ticket.status);
         setEditAssignees(ticket.assignedTo ? [ticket.assignedTo] : []);
+        setEditNote('');
         setShowAssigneeDropdown(false);
         setAssigneeSearch('');
     };
@@ -111,9 +114,9 @@ const TicketDetail = ({ ticket, onBack }) => {
     };
 
     return (
-        <div className='bg-white rounded-2xl shadow-lg border border-gray-200 p-6 md:p-8'>
+        <div className='bg-white rounded-2xl shadow-lg border border-gray-200 p-5 md:p-6'>
             {/* Back / Edit bar */}
-            <div className='flex items-center justify-between mb-4'>
+            <div className='flex items-center justify-between mb-3'>
                 <button onClick={onBack} className='text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1'>
                     ← Back
                 </button>
@@ -137,7 +140,7 @@ const TicketDetail = ({ ticket, onBack }) => {
             </div>
 
             {/* Two-column body */}
-            <div className='flex flex-col lg:flex-row gap-8 items-stretch'>
+            <div className='flex flex-col lg:flex-row gap-6 items-stretch'>
                 {/* Left: title + timeline */}
                 <div className='flex-1'>
                     {/* Title row */}
@@ -150,10 +153,10 @@ const TicketDetail = ({ ticket, onBack }) => {
                     </div>
                     <p className='text-gray-700 font-semibold mb-0.5'>{ticket.topicName}</p>
                     <p className='text-gray-600 text-sm mb-1'>{ticket.message}</p>
-                    <p className='text-xs text-gray-500 mb-4'>Assignee: <span className='text-gray-700'>{ticket.assignedTo}</span></p>
+                    <p className='text-xs text-gray-500 mb-3'>Assignee: <span className='text-gray-700'>{ticket.assignedTo}</span></p>
 
-                    <p className='font-semibold text-gray-700 mb-3'>Tickets:</p>
-                    <div className='space-y-4'>
+                    <p className='font-semibold text-gray-700 mb-2'>Tickets:</p>
+                    <div className='space-y-3'>
                         {timeline.map((step, i) => (
                             <div key={i} className='flex items-start gap-3'>
                                 <div className={`mt-1 w-3 h-3 rounded-full shrink-0 ${timelineDot(step.status)}`} />
@@ -161,7 +164,7 @@ const TicketDetail = ({ ticket, onBack }) => {
                                     <p className='text-sm font-bold text-gray-700 uppercase'>{step.status}
                                         <span className='font-normal text-gray-400 ml-2 text-xs'>{step.date}</span>
                                     </p>
-                                    <p className='text-gray-600 mt-1 text-sm'>Details</p>
+                                    {step.detail && <p className='text-gray-600 mt-1 text-sm'>{step.detail}</p>}
                                 </div>
                             </div>
                         ))}
@@ -169,7 +172,7 @@ const TicketDetail = ({ ticket, onBack }) => {
                 </div>
 
                 {/* Right: People + Status (edit) + Comments */}
-                <div className='flex-1 flex flex-col gap-6'>
+                <div className='flex-1 flex flex-col gap-4'>
                     {/* People */}
                     <div>
                         <p className='font-bold text-gray-800 text-base mb-2'>People</p>
@@ -242,23 +245,32 @@ const TicketDetail = ({ ticket, onBack }) => {
                         </div>
                     </div>
 
-                    {/* Status buttons — always rendered to reserve space */}
-                    <div className={`flex flex-wrap gap-2 ${isEditing ? '' : 'invisible pointer-events-none'}`}>
-                        {STATUS_OPTIONS.map(s => (
-                            <button
-                                key={s}
-                                onClick={() => setEditStatus(s)}
-                                className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${statusButtonStyle(s)}`}
-                            >
-                                {s}
-                            </button>
-                        ))}
+                    {/* Status buttons + note — always rendered to reserve space */}
+                    <div className={`${isEditing ? '' : 'invisible pointer-events-none'}`}>
+                        <div className='flex flex-wrap gap-2 mb-2'>
+                            {STATUS_OPTIONS.map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setEditStatus(s)}
+                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${statusButtonStyle(s)}`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                        <textarea
+                            rows={2}
+                            value={editNote}
+                            onChange={e => setEditNote(e.target.value)}
+                            placeholder='Add a note for this status update...'
+                            className='w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none'
+                        />
                     </div>
 
                     {/* Comments */}
                     <div>
                         <p className='font-bold text-gray-800 text-base mb-3'>comment</p>
-                        <div className='space-y-3 mb-4 h-64 overflow-y-auto pr-1'>
+                        <div className='space-y-3 mb-3 h-56 overflow-y-auto pr-1'>
                             {comments.length === 0 && (
                                 <p className='text-xs text-gray-400'>No comments yet.</p>
                             )}
