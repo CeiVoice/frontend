@@ -118,7 +118,7 @@ const TicketDetail = ({ ticket, onBack }) => {
                 </button>
                 {isEditing ? (
                     <div className='flex items-center gap-2'>
-                        <button onClick={handleSave} className='px-4 py-1.5 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600'>
+                        <button onClick={handleSave} className='px-4 py-1.5 rounded-lg bg-[#4377E5] text-white text-sm font-semibold hover:bg-blue-700'>
                             Save
                         </button>
                         <button onClick={handleRevert} className='px-4 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50'>
@@ -187,7 +187,7 @@ const TicketDetail = ({ ticket, onBack }) => {
                         <p className='text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2 mb-1'>Assignees</p>
                         <div>
                             {/* Assignee pills — always visible; × button only active in edit mode */}
-                            <div className='flex flex-wrap gap-1.5 mb-2 min-h-[24px]'>
+                            <div className='flex flex-wrap gap-1.5 mb-2 min-h-6'>
                                 {(isEditing ? editAssignees : (Array.isArray(ticket.assignedTo) ? ticket.assignedTo : (ticket.assignedTo ? [ticket.assignedTo] : []))).map((a, i) => (
                                     <span key={i} className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-xs text-gray-700'>
                                         {a}
