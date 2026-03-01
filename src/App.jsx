@@ -5,7 +5,8 @@ import Signin from './components/auth/signin'
 import Signup from './components/auth/signup'
 import Layout from './page1'
 import Home from './components/page/home'
-import Tracking from './components/page/tracking'
+import Tracking from './components/page/dashboard'
+import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
 
 function App() {
@@ -59,7 +60,8 @@ function App() {
       >
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<Home />} />
-        <Route path="tracking" element={<Tracking />} />
+        <Route path="dashboard" element={<Tracking />} />
+        <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/signin'} replace />} />

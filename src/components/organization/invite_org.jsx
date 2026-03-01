@@ -16,7 +16,7 @@ function InviteOrg({ onClose, onInviteSuccess }) {
     const handleInvite = async () => {
         setError('')
         setSuccess('')
-        
+
         if (!emails.trim()) {
             setError('Please enter at least one email')
             return
@@ -62,12 +62,12 @@ function InviteOrg({ onClose, onInviteSuccess }) {
 
             setSuccess(`Successfully invited ${emailList.length} member(s)`)
             setEmails('')
-            
+
             // Refresh the organizations list
             if (onInviteSuccess) {
                 onInviteSuccess()
             }
-            
+
             setTimeout(() => {
                 onClose()
             }, 1500)

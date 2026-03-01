@@ -15,7 +15,8 @@ const Side = ({ isOpen = true }) => {
     >
       <div className='h-full overflow-y-auto'>
         <div className='flex flex-col px-6 gap-6'>
-          <button onClick={() => navigate('/tracking')} className={`mt-8 ${linkClass('/tracking')}`}>TRACKING</button>
+          <button onClick={() => navigate('/dashboard')} className={`mt-8 ${linkClass('/dashboard')}`}>Dashboard</button>
+          <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
           <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
           <button className='select-none text-left bg-transparent text-black hover:text-gray-400'>Assignee</button>
         </div>
