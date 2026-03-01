@@ -9,7 +9,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-20",
         organization: "TechCorp Inc",
         createdBy: { email: "67011213@kmitl.ac.th", department: "IT" },
-        assignedTo: "67676767@kmitl.ac.th",
+        assignedTo: ["67676767@kmitl.ac.th"],
         followers: ["67011213@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "20/01/2025 12:00 AM" },
@@ -27,7 +27,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-21",
         organization: "TechCorp Inc",
         createdBy: { email: "67011213@kmitl.ac.th", department: "IT" },
-        assignedTo: "67011213@kmitl.ac.th",
+        assignedTo: ["67011213@kmitl.ac.th"],
         followers: ["67011274@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "21/01/2025 09:00 AM" },
@@ -44,7 +44,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-22",
         organization: "Creative Studios",
         createdBy: { email: "67011274@kmitl.ac.th", department: "Financial" },
-        assignedTo: "67676767@kmitl.ac.th",
+        assignedTo: ["67676767@kmitl.ac.th"],
         followers: ["67011274@kmitl.ac.th", "67011213@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "22/01/2025 08:00 AM" },
@@ -61,7 +61,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-19",
         organization: "StartUp Labs",
         createdBy: { email: "67676767@kmitl.ac.th", department: "Technician" },
-        assignedTo: "67011274@kmitl.ac.th",
+        assignedTo: ["67011274@kmitl.ac.th"],
         followers: ["67676767@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "19/01/2025 02:00 PM" },
@@ -79,7 +79,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-23",
         organization: "Global Solutions",
         createdBy: { email: "67011213@kmitl.ac.th", department: "IT" },
-        assignedTo: "67011274@kmitl.ac.th",
+        assignedTo: ["67011264@kmitl.ac.th"],
         followers: ["67011213@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "23/01/2025 11:00 AM" },
@@ -96,7 +96,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-23",
         organization: "Global Solutions",
         createdBy: { email: "67011274@kmitl.ac.th", department: "Financial" },
-        assignedTo: "67676767@kmitl.ac.th",
+        assignedTo: ["67676765@kmitl.ac.th"],
         followers: ["67011274@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "23/01/2025 01:00 PM" }
@@ -112,7 +112,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-23",
         organization: "TechCorp Inc",
         createdBy: { email: "67676767@kmitl.ac.th", department: "Technician" },
-        assignedTo: "67011213@kmitl.ac.th",
+        assignedTo: ["67011313@kmitl.ac.th"],
         followers: ["67676767@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "23/01/2025 03:00 PM" },
@@ -129,7 +129,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-18",
         organization: "Creative Studios",
         createdBy: { email: "67676767@kmitl.ac.th", department: "Technician" },
-        assignedTo: "67011213@kmitl.ac.th",
+        assignedTo: ["67011223@kmitl.ac.th"],
         followers: ["67676767@kmitl.ac.th", "67011274@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "18/01/2025 10:00 AM" },
@@ -147,7 +147,7 @@ export const EXAMPLE_TICKETS = [
         date: "2024-02-18",
         organization: "Creative Studios",
         createdBy: { email: "67011999@kmitl.ac.th", department: "Technician" },
-        assignedTo: "67011213@kmitl.ac.th",
+        assignedTo: ["67011215@kmitl.ac.th"],
         followers: ["67011999@kmitl.ac.th"],
         timeline: [
             { status: "NEW", date: "18/01/2025 10:00 AM" },

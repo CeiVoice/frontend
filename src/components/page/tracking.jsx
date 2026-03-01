@@ -5,13 +5,9 @@ import { MdAccessTime } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { FiSearch } from "react-icons/fi";
 import { COMMENTS } from '../constants/comments';
+import { ALL_USERS } from '../constants/users';
 
 /* ─── Ticket Detail View ─────────────────────────────────────── */
-const ALL_USERS = [
-    '67011274@kmitl.ac.th',
-    '67011213@kmitl.ac.th',
-    '67676767@kmitl.ac.th',
-];
 
 const TicketDetail = ({ ticket, onBack }) => {
     const [commentText, setCommentText] = useState('');
@@ -24,7 +20,7 @@ const TicketDetail = ({ ticket, onBack }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editStatus, setEditStatus] = useState(ticket.status);
     const [editAssignees, setEditAssignees] = useState(
-        ticket.assignedTo ? [ticket.assignedTo] : []
+        Array.isArray(ticket.assignedTo) ? [...ticket.assignedTo] : (ticket.assignedTo ? [ticket.assignedTo] : [])
     );
     const [timeline, setTimeline] = useState(ticket.timeline ?? []);
     const [editNote, setEditNote] = useState('');
@@ -42,7 +38,7 @@ const TicketDetail = ({ ticket, onBack }) => {
         const newStep = { status: editStatus.toUpperCase(), date: dateStr, detail: editNote.trim() };
         setTimeline(prev => [...prev, newStep]);
         ticket.status = editStatus;
-        ticket.assignedTo = editAssignees[0] ?? '';
+        ticket.assignedTo = [...editAssignees];
         ticket.timeline = [...timeline, newStep];
         setEditNote('');
         setIsEditing(false);
@@ -51,7 +47,7 @@ const TicketDetail = ({ ticket, onBack }) => {
 
     const handleRevert = () => {
         setEditStatus(ticket.status);
-        setEditAssignees(ticket.assignedTo ? [ticket.assignedTo] : []);
+        setEditAssignees(Array.isArray(ticket.assignedTo) ? [...ticket.assignedTo] : (ticket.assignedTo ? [ticket.assignedTo] : []));
         setEditNote('');
         setShowAssigneeDropdown(false);
         setAssigneeSearch('');
@@ -153,10 +149,10 @@ const TicketDetail = ({ ticket, onBack }) => {
                     </div>
                     <p className='text-gray-700 font-semibold mb-0.5'>{ticket.topicName}</p>
                     <p className='text-gray-600 text-sm mb-1'>{ticket.message}</p>
-                    <p className='text-xs text-gray-500 mb-3'>Assignee: <span className='text-gray-700'>{ticket.assignedTo}</span></p>
+                    <p className='text-xs text-gray-500 mb-3'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : [ticket.assignedTo]).join(', ')}</span></p>
 
                     <p className='font-semibold text-gray-700 mb-2'>Tickets:</p>
-                    <div className='space-y-3'>
+                    <div className='space-y-3 max-h-64 overflow-y-auto'>
                         {timeline.map((step, i) => (
                             <div key={i} className='flex items-start gap-3'>
                                 <div className={`mt-1 w-3 h-3 rounded-full shrink-0 ${timelineDot(step.status)}`} />
@@ -192,7 +188,7 @@ const TicketDetail = ({ ticket, onBack }) => {
                         <div>
                             {/* Assignee pills — always visible; × button only active in edit mode */}
                             <div className='flex flex-wrap gap-1.5 mb-2 min-h-[24px]'>
-                                {(isEditing ? editAssignees : (ticket.assignedTo ? [ticket.assignedTo] : [])).map((a, i) => (
+                                {(isEditing ? editAssignees : (Array.isArray(ticket.assignedTo) ? ticket.assignedTo : (ticket.assignedTo ? [ticket.assignedTo] : []))).map((a, i) => (
                                     <span key={i} className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-xs text-gray-700'>
                                         {a}
                                         {isEditing && (
@@ -377,9 +373,7 @@ const Tracking = () => {
         <div className={containerClasses}>
             <div className='p-6 md:p-8'>
                 {selectedTicket ? (
-                    <div className='h-200'>
-                        <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} />
-                    </div>
+                    <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} />
                 ) : (
                     <>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 select-none'>
