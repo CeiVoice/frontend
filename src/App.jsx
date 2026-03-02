@@ -5,10 +5,10 @@ import Signin from './components/auth/signin'
 import Signup from './components/auth/signup'
 import Layout from './page1'
 import Home from './components/page/home'
-import Tracking from './components/page/dashboard'
+import Tracking from './components/page/user'
 import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
-import AssigneePage from './components/page/assignee'
+import AssigneePage from './components/page/Dashboard'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -61,7 +61,8 @@ function App() {
       >
         <Route index element={<Navigate to="/home" replace />} />
         <Route path="home" element={<Home />} />
-        <Route path="dashboard" element={<Tracking />} />
+        <Route path="dashboard" element={<AssigneePage />} />
+        <Route path="user" element={<Tracking />} />
         <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="assignee" element={<AssigneePage />} />

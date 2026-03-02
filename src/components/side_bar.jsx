@@ -15,10 +15,10 @@ const Side = ({ isOpen = true }) => {
     >
       <div className='h-full overflow-y-auto'>
         <div className='flex flex-col px-6 gap-6'>
-          <button onClick={() => navigate('/dashboard')} className={`mt-8 ${linkClass('/dashboard')}`}>Dashboard</button>
+          <button onClick={() => navigate('/user')} className={`mt-8 ${linkClass('/user')}`}>User</button>
           <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
           {/* <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button> */}
-          <button onClick={() => navigate('/assignee')} className={linkClass('/assignee')}>Assignee</button>
+          <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>
         </div>
       </div>
     </aside>
