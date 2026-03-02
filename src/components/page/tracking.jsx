@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { LuSend, LuWrench, LuUserCheck, LuXCircle } from "react-icons/lu";
+import { LuSend, LuWrench } from "react-icons/lu";
 import { MdAccessTime } from "react-icons/md";
-import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { IoMdCheckmarkCircleOutline, IoMdCloseCircle } from "react-icons/io";
 import { FiSearch } from "react-icons/fi";
 import { COMMENTS } from '../constants/comments';
 import { ALL_USERS } from '../constants/users';
@@ -328,7 +328,7 @@ const Tracking = () => {
     const [selectedTicket, setSelectedTicket] = useState(null);
 
     const activeTickets = reports.filter(r => r.status !== 'Solved' && r.status !== 'Failed').length;
-    const assignedTickets = reports.filter(r => r.assignedTo?.length > 0).length;
+    const assignedTickets = reports.filter(r => r.status === 'Assigned').length;
     const solvingTickets = reports.filter(r => r.status === 'Solving').length;
     const solvedTickets = reports.filter(r => r.status === 'Solved').length;
     const failedTickets = reports.filter(r => r.status === 'Failed').length;
@@ -336,11 +336,11 @@ const Tracking = () => {
     const getStatusBadgeColor = (status) => {
         switch (status) {
             case 'Solving':
+                return 'bg-red-100 text-red-700';
+            case 'Solving':
                 return 'bg-yellow-100 text-yellow-700';
             case 'Solved':
                 return 'bg-green-100 text-green-700';
-            case 'Failed':
-                return 'bg-red-100 text-red-700';
             default:
                 return 'bg-blue-100 text-blue-700';
         }
@@ -377,12 +377,12 @@ const Tracking = () => {
                     <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} />
                 ) : (
                     <>
-                        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 select-none'>
+                        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 select-none'>
                             <StatCard label="Active Tickets" count={activeTickets} icon={<LuSend />} />
-                            <StatCard label="Assigned" count={assignedTickets} icon={<LuUserCheck />} />
+                            <StatCard label="Assigned" count={assignedTickets} icon={<MdAccessTime />} />
                             <StatCard label="Solving" count={solvingTickets} icon={<LuWrench />} />
                             <StatCard label="Solved" count={solvedTickets} icon={<IoMdCheckmarkCircleOutline />} />
-                            <StatCard label="Failed" count={failedTickets} icon={<LuXCircle />} />
+                            <StatCard label="Failed" count={failedTickets} icon={<IoMdCloseCircle />} />
                         </div>
 
                         <div className='flex gap-4 mb-8'>
