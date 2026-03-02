@@ -28,7 +28,7 @@ function Layout({ userEmail, onSignout }) {
             topic: pendingMessage.topic,
             message: pendingMessage.message,
             date: new Date().toLocaleString(),
-            status: 'Pending'
+            status: 'Solving'
         };
         setReports([newReport, ...reports]);
         setShowConfirmation(false);

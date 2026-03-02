@@ -15,7 +15,7 @@ const AdminPage = () => {
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
-            case 'Pending':
+            case 'Solving':
                 return 'bg-red-100 text-red-700';
             case 'Solving':
                 return 'bg-yellow-100 text-yellow-700';

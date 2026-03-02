@@ -17,7 +17,7 @@ const Side = ({ isOpen = true }) => {
         <div className='flex flex-col px-6 gap-6'>
           <button onClick={() => navigate('/dashboard')} className={`mt-8 ${linkClass('/dashboard')}`}>Dashboard</button>
           <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
-          <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
+          {/* <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button> */}
           <button onClick={() => navigate('/assignee')} className={linkClass('/assignee')}>Assignee</button>
         </div>
       </div>
