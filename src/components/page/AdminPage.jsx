@@ -17,7 +17,7 @@ const AdminPage = () => {
         switch (status) {
             case 'Pending':
                 return 'bg-red-100 text-red-700';
-            case 'In Progress':
+            case 'Solving':
                 return 'bg-yellow-100 text-yellow-700';
             case 'Solved':
                 return 'bg-green-100 text-green-700';
@@ -89,7 +89,7 @@ const AdminPage = () => {
                             <div key={topicIndex} className='bg-red-50 rounded-xl overflow-hidden border border-red-200'>
                                 <div className='bg-red-100 px-6 py-3 border-b border-red-200'>
                                     <div className='flex justify-between items-center'>
-                                        <h2 className='text-lg font-bold text-red-900'>{topic}</h2>
+                                        <h2 className='text-lg font-bold text-red-900'>Group {topicIndex + 1}</h2>
                                         <span className='bg-red-200 text-red-900 px-3 py-1 rounded-full text-sm font-semibold select-none'>
                                             {topicReports.length} Draft{topicReports.length !== 1 ? 's' : ''}
                                         </span>

@@ -8,6 +8,7 @@ import Home from './components/page/home'
 import Tracking from './components/page/dashboard'
 import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
+import AssigneePage from './components/page/assignee'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -63,6 +64,7 @@ function App() {
         <Route path="dashboard" element={<Tracking />} />
         <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="assignee" element={<AssigneePage />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/signin'} replace />} />
     </Routes>

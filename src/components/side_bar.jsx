@@ -18,7 +18,7 @@ const Side = ({ isOpen = true }) => {
           <button onClick={() => navigate('/dashboard')} className={`mt-8 ${linkClass('/dashboard')}`}>Dashboard</button>
           <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
           <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
-          <button className='select-none text-left bg-transparent text-black hover:text-gray-400'>Assignee</button>
+          <button onClick={() => navigate('/assignee')} className={linkClass('/assignee')}>Assignee</button>
         </div>
       </div>
     </aside>

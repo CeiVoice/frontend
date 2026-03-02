@@ -327,16 +327,16 @@ const Tracking = () => {
     const [search, setSearch] = useState('');
     const [selectedTicket, setSelectedTicket] = useState(null);
 
-    const activeTickets = reports.filter(r => r.status === 'Pending' || r.status === 'In Progress').length;
+    const activeTickets = reports.filter(r => r.status === 'Pending' || r.status === 'Solving').length;
     const pendingTickets = reports.filter(r => r.status === 'Pending').length;
-    const inProgressTickets = reports.filter(r => r.status === 'In Progress').length;
+    const inProgressTickets = reports.filter(r => r.status === 'Solving').length;
     const solvedTickets = reports.filter(r => r.status === 'Solved').length;
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
             case 'Pending':
                 return 'bg-red-100 text-red-700';
-            case 'In Progress':
+            case 'Solving':
                 return 'bg-yellow-100 text-yellow-700';
             case 'Solved':
                 return 'bg-green-100 text-green-700';
@@ -379,7 +379,7 @@ const Tracking = () => {
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 select-none'>
                             <StatCard label="Active Tickets" count={activeTickets} icon={<LuSend />} />
                             <StatCard label="Pending" count={pendingTickets} icon={<MdAccessTime />} />
-                            <StatCard label="In Progress" count={inProgressTickets} icon={<LuWrench />} />
+                            <StatCard label="Solving" count={inProgressTickets} icon={<LuWrench />} />
                             <StatCard label="Solved" count={solvedTickets} icon={<IoMdCheckmarkCircleOutline />} />
                         </div>
 
