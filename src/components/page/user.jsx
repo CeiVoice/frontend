@@ -13,8 +13,9 @@ const Tracking = () => {
     const [currentUserId, setCurrentUserId] = useState(null);
 
     const isAdmin = selectedOrg?.isAdmin === true;
-    const [viewMode, setViewMode] = useState('user'); // 'admin' | 'user'
+    const [viewMode, setViewMode] = useState('user'); // 'user' | 'admin' — only admins can toggle
 
+    // Decode current user id from token (same as tracking.jsx — used to show own row when not admin)
     useEffect(() => {
         try {
             const token = localStorage.getItem('authToken');
@@ -50,18 +51,19 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    // Apply view filter then sorting
+    // Non-admins always see only their own row.
+    // Admins see their own row in 'user' mode, all members in 'admin' mode.
     const sortedData = useMemo(() => {
-        let data = userData;
-        if (viewMode === 'user' && currentUserId !== null) {
-            data = userData.filter(u => u.userId === currentUserId);
-        }
+        const showAll = isAdmin && viewMode === 'admin';
+        let data = (!showAll && currentUserId !== null)
+            ? userData.filter(u => u.userId === currentUserId)
+            : userData;
         if (!sort.key || !sort.dir) return data;
         return [...data].sort((a, b) => {
             const diff = (a[sort.key] || 0) - (b[sort.key] || 0);
             return sort.dir === 'asc' ? diff : -diff;
         });
-    }, [userData, sort, viewMode, currentUserId]);
+    }, [userData, sort, isAdmin, viewMode, currentUserId]);
 
     const handleSort = (key) => {
         setSort(prev => {
@@ -79,18 +81,18 @@ const Tracking = () => {
     return (
         <div className={containerClasses}>
             <div className='p-3 sm:p-6 md:p-8'>
-                {/* Admin / User view toggle */}
-                <div className='flex gap-2 mb-4'>
-                    <button
-                        onClick={() => setViewMode('user')}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'user'
-                                ? 'bg-[#4377E5] text-white shadow'
-                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        User
-                    </button>
-                    {isAdmin && (
+                {/* Toggle only visible to admins */}
+                {isAdmin && (
+                    <div className='flex gap-2 mb-4'>
+                        <button
+                            onClick={() => setViewMode('user')}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'user'
+                                    ? 'bg-[#4377E5] text-white shadow'
+                                    : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            User
+                        </button>
                         <button
                             onClick={() => setViewMode('admin')}
                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'admin'
@@ -100,8 +102,8 @@ const Tracking = () => {
                         >
                             Admin
                         </button>
-                    )}
-                </div>
+                    </div>
+                )}
                 <div className='bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden'>
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-160'>
