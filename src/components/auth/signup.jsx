@@ -33,7 +33,7 @@ function Signup({ onSuccess, onBack }) {
                     return;
                 }
                 // If not duplicate, treat as success
-                alert("Successfully created account.");
+                alert("A confirmation email has been sent to your email. Please verify your email before signing in.");
                 if (onBack) {
                     onBack(); // Return to login page
                 }
