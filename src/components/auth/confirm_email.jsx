@@ -1,11 +1,9 @@
-import { FaCheckCircle } from "react-icons/fa";
+import React from 'react'
 
-const ConfirmEmail = () => {
-    return (
-        <div>
-            <FaCheckCircle size={64} className="text-green-500 mb-4" />
-        </div>
-    );
-};
+const confirm_email = () => {
+  return (
+    <div>confirm_email</div>
+  )
+}
 
-export default ConfirmEmail;
+export default confirm_email
