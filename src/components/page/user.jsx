@@ -10,8 +10,20 @@ const Tracking = () => {
     const [userData, setUserData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedOrg, setSelectedOrg] = useState(null);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const isAdmin = selectedOrg?.isAdmin === true;
+    const [viewMode, setViewMode] = useState('user'); // 'admin' | 'user'
+
+    useEffect(() => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                setCurrentUserId(payload.id ?? null);
+            }
+        } catch { }
+    }, []);
 
     useEffect(() => {
         const loadOrg = () => {
@@ -38,14 +50,18 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    // Apply sorting
+    // Apply view filter then sorting
     const sortedData = useMemo(() => {
-        if (!sort.key || !sort.dir) return userData;
-        return [...userData].sort((a, b) => {
+        let data = userData;
+        if (viewMode === 'user' && currentUserId !== null) {
+            data = userData.filter(u => u.userId === currentUserId);
+        }
+        if (!sort.key || !sort.dir) return data;
+        return [...data].sort((a, b) => {
             const diff = (a[sort.key] || 0) - (b[sort.key] || 0);
             return sort.dir === 'asc' ? diff : -diff;
         });
-    }, [userData, sort]);
+    }, [userData, sort, viewMode, currentUserId]);
 
     const handleSort = (key) => {
         setSort(prev => {
@@ -63,6 +79,29 @@ const Tracking = () => {
     return (
         <div className={containerClasses}>
             <div className='p-3 sm:p-6 md:p-8'>
+                {/* Admin / User view toggle */}
+                <div className='flex gap-2 mb-4'>
+                    <button
+                        onClick={() => setViewMode('user')}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'user'
+                                ? 'bg-[#4377E5] text-white shadow'
+                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        User
+                    </button>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setViewMode('admin')}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'admin'
+                                    ? 'bg-[#4377E5] text-white shadow'
+                                    : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            Admin
+                        </button>
+                    )}
+                </div>
                 <div className='bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden'>
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-160'>
