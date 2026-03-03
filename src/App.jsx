@@ -8,7 +8,7 @@ import Home from './components/page/home'
 import Tracking from './components/page/user'
 import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
-import AssigneePage from './components/page/Dashboard'
+import AssigneePage from './components/page/dashboard'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)

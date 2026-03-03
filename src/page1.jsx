@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import Top from './components/top_bar';
 import Side from './components/side_bar';
 import Report from './components/ticket/report';
 import Confirmation from './components/ticket/confirmation';
 import Success from './components/ticket/success';
-import { EXAMPLE_TICKETS } from './components/constants/ticketExamples';
 
 function Layout({ userEmail, onSignout, roles, onRoleChange }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -13,7 +13,8 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
-    const [reports, setReports] = useState(EXAMPLE_TICKETS);
+    const [reports, setReports] = useState([]);
+    const [submitError, setSubmitError] = useState(null);
 
     const handleReportSubmit = (reportData) => {
         setPendingMessage(reportData);
@@ -21,18 +22,46 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
         setShowConfirmation(true);
     };
 
-    const handleConfirm = () => {
-        console.log('Report submitted:', pendingMessage);
-        const newReport = {
-            topicName: pendingMessage.topicName,
-            topic: pendingMessage.topic,
-            message: pendingMessage.message,
-            date: new Date().toLocaleString(),
-            status: 'Solving'
-        };
-        setReports([newReport, ...reports]);
-        setShowConfirmation(false);
-        setShowSuccess(true);
+    const handleConfirm = async () => {
+        const token = localStorage.getItem('authToken');
+        const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
+
+        if (!token || !org) {
+            setSubmitError('Please select an organization first.');
+            setShowConfirmation(false);
+            setShowSuccess(true);
+            return;
+        }
+
+        try {
+            const decoded = jwtDecode(token);
+            const res = await fetch('http://localhost/api/tickets/draft', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    Title: pendingMessage.topicName,
+                    Detail: pendingMessage.message,
+                    CreatedBy: decoded.id,
+                    OrgId: org.id
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.error || 'Failed to create ticket');
+                return;
+            }
+
+            setSubmitError(null);
+            setShowConfirmation(false);
+            setShowSuccess(true);
+        } catch (err) {
+            console.error('Submit ticket error:', err);
+            alert('Failed to submit ticket. Please try again.');
+        }
     };
 
     return (
@@ -49,7 +78,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
             </div>
             {showReport && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+                    className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 backdrop-blur-sm p-4"
                     onClick={() => setShowReport(false)}
                 >
                     <div
@@ -69,10 +98,10 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
             )}
             {showConfirmation && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+                    className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 backdrop-blur-sm p-4"
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-lg"
+                        className="bg-white shadow-xl rounded-2xl w-full max-w-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Confirmation
@@ -87,11 +116,11 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
             )}
             {showSuccess && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+                    className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 backdrop-blur-sm p-4"
                     onClick={() => setShowSuccess(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-lg"
+                        className="bg-white shadow-xl rounded-2xl w-full max-w-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Success onClose={() => setShowSuccess(false)} />

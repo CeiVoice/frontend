@@ -1,20 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { LuSend, LuWrench } from "react-icons/lu";
 import { MdAccessTime } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline, IoMdCloseCircle } from "react-icons/io";
 import { FiSearch } from "react-icons/fi";
-import { COMMENTS } from '../constants/comments';
-import { ALL_USERS } from '../constants/users';
 
 /* ─── Ticket Detail View ─────────────────────────────────────── */
 
 const TicketDetail = ({ ticket, onBack, isAdmin }) => {
     const [commentText, setCommentText] = useState('');
     const [commentType, setCommentType] = useState('public'); // 'public' | 'internal'
-    const [comments, setComments] = useState(
-        COMMENTS.filter(c => c.ticketId === ticket.id)
-    );
+    const [comments, setComments] = useState([]);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Fetch real comments when ticket detail opens
+    useEffect(() => {
+        if (!ticket.groupId) return;
+        const fetchComments = async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            setCommentsLoading(true);
+            try {
+                const res = await fetch(`http://localhost/api/comments/group/${ticket.groupId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const raw = data.data?.comments || data.data || [];
+                    setComments(raw.map(c => ({
+                        id: c.id,
+                        email: `User #${c.CreatedBy}`,
+                        date: new Date(c.CreateAt || c.CreatedAt).toLocaleString(),
+                        message: c.Detail,
+                        type: c.isPublic ? 'public' : 'internal'
+                    })));
+                }
+            } catch (e) {
+                console.error('Failed to load comments', e);
+            } finally {
+                setCommentsLoading(false);
+            }
+        };
+        fetchComments();
+    }, [ticket.groupId]);
 
     // ── Edit mode state ──
     const [isEditing, setIsEditing] = useState(false);
@@ -26,16 +55,61 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
     const [editNote, setEditNote] = useState('');
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [assigneeSearch, setAssigneeSearch] = useState('');
+    const [orgMembers, setOrgMembers] = useState([]);
 
-    const filteredUsers = ALL_USERS.filter(
+    // Fetch org members for assignee dropdown
+    useEffect(() => {
+        const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
+        if (!org) return;
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        fetch(`http://localhost/api/tickets/org/${org.id}/stats/members`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(d => setOrgMembers((d.result || []).map(m => `User #${m.userId}`)))
+            .catch(() => {});
+    }, []);
+
+    const filteredUsers = orgMembers.filter(
         u => u.toLowerCase().includes(assigneeSearch.toLowerCase()) && !editAssignees.includes(u)
     );
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        const token = localStorage.getItem('authToken');
+        const apiStatus = editStatus.toLowerCase();
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
         const newStep = { status: editStatus.toUpperCase(), date: dateStr, detail: editNote.trim() };
+
+        if (['solved', 'failed'].includes(apiStatus) && ticket.ticketId && ticket.predictionId) {
+            setSaving(true);
+            try {
+                const res = await fetch(`http://localhost/api/tickets/${ticket.ticketId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ predictionId: ticket.predictionId, status: apiStatus })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(err.error || 'Failed to update status');
+                    setSaving(false);
+                    return;
+                }
+            } catch (e) {
+                console.error('Status update error', e);
+                alert('Failed to update status. Please try again.');
+                setSaving(false);
+                return;
+            } finally {
+                setSaving(false);
+            }
+        }
+
         setTimeline(prev => [...prev, newStep]);
         ticket.status = editStatus;
         ticket.assignedTo = [...editAssignees];
@@ -66,12 +140,47 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         setShowAssigneeDropdown(false);
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!commentText.trim()) return;
+        const token = localStorage.getItem('authToken');
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-        setComments(prev => [...prev, { email: 'me@kmitl.ac.th', date: dateStr, message: commentText.trim(), type: commentType }]);
+
+        if (token && ticket.groupId) {
+            try {
+                const res = await fetch('http://localhost/api/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        GroupId: ticket.groupId,
+                        Detail: commentText.trim(),
+                        isPublic: commentType === 'public'
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const c = data.data;
+                    setComments(prev => [...prev, {
+                        id: c?.id,
+                        email: `User #${c?.CreatedBy}`,
+                        date: dateStr,
+                        message: commentText.trim(),
+                        type: commentType
+                    }]);
+                } else {
+                    // Fallback: add optimistically
+                    setComments(prev => [...prev, { email: 'me', date: dateStr, message: commentText.trim(), type: commentType }]);
+                }
+            } catch (e) {
+                setComments(prev => [...prev, { email: 'me', date: dateStr, message: commentText.trim(), type: commentType }]);
+            }
+        } else {
+            setComments(prev => [...prev, { email: 'me', date: dateStr, message: commentText.trim(), type: commentType }]);
+        }
         setCommentText('');
     };
 
@@ -110,33 +219,33 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
     };
 
     return (
-        <div className='bg-white rounded-2xl shadow-lg border border-gray-200 p-5 md:p-6'>
+        <div className='bg-white shadow-lg p-5 md:p-6 border border-gray-200 rounded-2xl'>
             {/* Back / Edit bar */}
-            <div className='flex items-center justify-between mb-3'>
-                <button onClick={onBack} className='text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1'>
+            <div className='flex justify-between items-center mb-3'>
+                <button onClick={onBack} className='flex items-center gap-1 text-gray-500 hover:text-gray-800 text-sm'>
                     ← Back
                 </button>
                 {isEditing ? (
                     <div className='flex items-center gap-2'>
-                        <button onClick={handleSave} className='px-4 py-1.5 rounded-lg bg-[#4377E5] text-white text-sm font-semibold hover:bg-blue-700'>
-                            Save
+                        <button onClick={handleSave} disabled={saving} className='bg-[#4377E5] hover:bg-blue-700 disabled:opacity-60 px-4 py-1.5 rounded-lg font-semibold text-white text-sm'>
+                            {saving ? 'Saving…' : 'Save'}
                         </button>
-                        <button onClick={handleRevert} className='px-4 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50'>
+                        <button onClick={handleRevert} className='hover:bg-gray-50 px-4 py-1.5 border border-gray-300 rounded-lg text-gray-700 text-sm'>
                             Revert
                         </button>
-                        <button onClick={handleCancel} className='px-4 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50'>
+                        <button onClick={handleCancel} className='hover:bg-gray-50 px-4 py-1.5 border border-gray-300 rounded-lg text-gray-700 text-sm'>
                             Cancel
                         </button>
                     </div>
                 ) : isAdmin ? (
-                    <button onClick={() => setIsEditing(true)} className='px-4 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50'>
+                    <button onClick={() => setIsEditing(true)} className='hover:bg-gray-50 px-4 py-1.5 border border-gray-300 rounded-lg text-gray-700 text-sm'>
                         Edit
                     </button>
                 ) : null}
             </div>
 
             {/* Two-column body */}
-            <div className='flex flex-col lg:flex-row gap-6 items-stretch'>
+            <div className='flex lg:flex-row flex-col items-stretch gap-6'>
                 {/* Left: title + timeline */}
                 <div className='flex-1'>
                     {/* Title row */}
@@ -145,22 +254,22 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusBadge(isEditing ? editStatus : ticket.status)}`}>
                             {isEditing ? editStatus : ticket.status}
                         </span>
-                        <span className='px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700'>{ticket.organization}</span>
+                        <span className='bg-blue-100 px-2.5 py-0.5 rounded-full font-semibold text-blue-700 text-xs'>{ticket.organization}</span>
                     </div>
-                    <p className='text-gray-700 font-semibold mb-0.5'>{ticket.topicName}</p>
-                    <p className='text-gray-600 text-sm mb-1'>{ticket.message}</p>
-                    <p className='text-xs text-gray-500 mb-3'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : [ticket.assignedTo]).join(', ')}</span></p>
+                    <p className='mb-0.5 font-semibold text-gray-700'>{ticket.topicName}</p>
+                    <p className='mb-1 text-gray-600 text-sm'>{ticket.message}</p>
+                    <p className='mb-3 text-gray-500 text-xs'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : [ticket.assignedTo]).join(', ')}</span></p>
 
-                    <p className='font-semibold text-gray-700 mb-2'>Tickets:</p>
+                    <p className='mb-2 font-semibold text-gray-700'>Tickets:</p>
                     <div className='space-y-3 max-h-64 overflow-y-auto'>
                         {timeline.map((step, i) => (
                             <div key={i} className='flex items-start gap-3'>
                                 <div className={`mt-1 w-3 h-3 rounded-full shrink-0 ${timelineDot(step.status)}`} />
                                 <div>
-                                    <p className='text-sm font-bold text-gray-700 uppercase'>{step.status}
-                                        <span className='font-normal text-gray-400 ml-2 text-xs'>{step.date}</span>
+                                    <p className='font-bold text-gray-700 text-sm uppercase'>{step.status}
+                                        <span className='ml-2 font-normal text-gray-400 text-xs'>{step.date}</span>
                                     </p>
-                                    {step.detail && <p className='text-gray-600 mt-1 text-sm'>{step.detail}</p>}
+                                    {step.detail && <p className='mt-1 text-gray-600 text-sm'>{step.detail}</p>}
                                 </div>
                             </div>
                         ))}
@@ -168,33 +277,33 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                 </div>
 
                 {/* Right: People + Status (edit) + Comments */}
-                <div className='flex-1 flex flex-col gap-4'>
+                <div className='flex flex-col flex-1 gap-4'>
                     {/* People */}
                     <div>
-                        <p className='font-bold text-gray-800 text-base mb-2'>People</p>
-                        <p className='text-xs font-semibold text-gray-500 uppercase tracking-wide'>Creator</p>
-                        <p className='text-sm text-gray-700 mb-2'>{ticket.createdBy?.email}</p>
+                        <p className='mb-2 font-bold text-gray-800 text-base'>People</p>
+                        <p className='font-semibold text-gray-500 text-xs uppercase tracking-wide'>Creator</p>
+                        <p className='mb-2 text-gray-700 text-sm'>{ticket.createdBy?.email}</p>
 
                         {(ticket.followers ?? []).length > 0 && (
                             <>
-                                <p className='text-xs font-semibold text-gray-500 uppercase tracking-wide'>followers</p>
+                                <p className='font-semibold text-gray-500 text-xs uppercase tracking-wide'>followers</p>
                                 {ticket.followers.map((f, i) => (
-                                    <p key={i} className='text-sm text-gray-700'>{f}</p>
+                                    <p key={i} className='text-gray-700 text-sm'>{f}</p>
                                 ))}
                             </>
                         )}
 
-                        <p className='text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2 mb-1'>Assignees</p>
+                        <p className='mt-2 mb-1 font-semibold text-gray-500 text-xs uppercase tracking-wide'>Assignees</p>
                         <div>
                             {/* Assignee pills — always visible; × button only active in edit mode */}
                             <div className='flex flex-wrap gap-1.5 mb-2 min-h-6'>
                                 {(isEditing ? editAssignees : (Array.isArray(ticket.assignedTo) ? ticket.assignedTo : (ticket.assignedTo ? [ticket.assignedTo] : []))).map((a, i) => (
-                                    <span key={i} className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-xs text-gray-700'>
+                                    <span key={i} className='flex items-center gap-1 bg-gray-100 px-2 py-0.5 border border-gray-300 rounded-full text-gray-700 text-xs'>
                                         {a}
                                         {isEditing && (
                                             <button
                                                 onClick={() => removeAssignee(a)}
-                                                className='ml-0.5 text-gray-400 hover:text-red-500 font-bold leading-none'
+                                                className='ml-0.5 font-bold text-gray-400 hover:text-red-500 leading-none'
                                             >
                                                 ×
                                             </button>
@@ -206,29 +315,29 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                             <div className={`relative inline-block ${isAdmin && isEditing ? '' : 'invisible pointer-events-none'}`}>
                                 <button
                                     onClick={() => { setShowAssigneeDropdown(v => !v); setAssigneeSearch(''); }}
-                                    className='text-xs text-blue-600 hover:text-blue-800 font-semibold border border-gray-300 rounded-full px-2.5 py-0.5 hover:bg-gray-50'
+                                    className='hover:bg-gray-50 px-2.5 py-0.5 border border-gray-300 rounded-full font-semibold text-blue-600 hover:text-blue-800 text-xs'
                                 >
                                     + Add
                                 </button>
                                 {showAssigneeDropdown && (
-                                    <div className='absolute z-20 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg'>
+                                    <div className='z-20 absolute bg-white shadow-lg mt-1 border border-gray-200 rounded-lg w-52'>
                                         <input
                                             autoFocus
                                             type='text'
                                             value={assigneeSearch}
                                             onChange={e => setAssigneeSearch(e.target.value)}
                                             placeholder='Enter the assignee...'
-                                            className='w-full px-3 py-2 text-xs border-b border-gray-200 focus:outline-none rounded-t-lg'
+                                            className='px-3 py-2 border-gray-200 border-b rounded-t-lg focus:outline-none w-full text-xs'
                                         />
                                         <ul className='max-h-36 overflow-y-auto'>
                                             {filteredUsers.length === 0 ? (
-                                                <li className='px-3 py-2 text-xs text-gray-400'>No users found</li>
+                                                <li className='px-3 py-2 text-gray-400 text-xs'>No users found</li>
                                             ) : (
                                                 filteredUsers.map((u, i) => (
                                                     <li
                                                         key={i}
                                                         onClick={() => addAssignee(u)}
-                                                        className='px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 cursor-pointer'
+                                                        className='hover:bg-blue-50 px-3 py-2 text-gray-700 text-xs cursor-pointer'
                                                     >
                                                         {u}
                                                     </li>
@@ -259,33 +368,36 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                             value={editNote}
                             onChange={e => setEditNote(e.target.value)}
                             placeholder='Add a note for this status update...'
-                            className='w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none'
+                            className='px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-gray-700 text-sm resize-none'
                         />
                     </div>
 
                     {/* Comments */}
                     <div>
-                        <p className='font-bold text-gray-800 text-base mb-3'>comment</p>
-                        <div className='space-y-3 mb-3 h-56 overflow-y-auto pr-1'>
-                            {comments.length === 0 && (
-                                <p className='text-xs text-gray-400'>No comments yet.</p>
+                        <p className='mb-3 font-bold text-gray-800 text-base'>comment</p>
+                        <div className='space-y-3 mb-3 pr-1 h-56 overflow-y-auto'>
+                            {commentsLoading && (
+                                <p className='text-gray-400 text-xs'>Loading comments...</p>
+                            )}
+                            {!commentsLoading && comments.length === 0 && (
+                                <p className='text-gray-400 text-xs'>No comments yet.</p>
                             )}
                             {comments.map((c, i) => (
                                 <div key={i} className={`rounded-lg px-3 py-2 ${c.type === 'internal' ? 'bg-yellow-50 border border-yellow-200' : ''}`}>
                                     <div className='flex flex-wrap items-center gap-2 mb-0.5'>
-                                        <span className='text-xs font-semibold text-gray-800'>{c.email}</span>
+                                        <span className='font-semibold text-gray-800 text-xs'>{c.email}</span>
                                         {c.type === 'internal' && (
-                                            <span className='px-1.5 py-0.5 text-[10px] rounded bg-yellow-400 text-white font-semibold'>Internal</span>
+                                            <span className='bg-yellow-400 px-1.5 py-0.5 rounded font-semibold text-[10px] text-white'>Internal</span>
                                         )}
                                         <span className='text-[10px] text-gray-400'>{c.date}</span>
                                     </div>
-                                    <p className='text-sm text-gray-700'>{c.message}</p>
+                                    <p className='text-gray-700 text-sm'>{c.message}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* Comment input */}
-                        <div className='flex items-center gap-2 flex-wrap'>
+                        <div className='flex flex-wrap items-center gap-2'>
                             {/* Public / Internal toggle — admin only */}
                             {isAdmin && (
                                 <button
@@ -294,7 +406,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                                         ? 'bg-yellow-400 text-white border-yellow-400'
                                         : 'bg-red-500 text-white border-red-500'}`}
                                 >
-                                    <span className='w-2 h-2 rounded-full bg-white inline-block' />
+                                    <span className='inline-block bg-white rounded-full w-2 h-2' />
                                     {commentType === 'public' ? 'Public' : 'Internal'}
                                 </button>
                             )}
@@ -304,11 +416,11 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                                 onChange={e => setCommentText(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleSend()}
                                 placeholder='write a comment...'
-                                className='flex-1 min-w-0 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400'
+                                className='flex-1 px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 text-sm'
                             />
                             <button
                                 onClick={handleSend}
-                                className='text-sm text-blue-600 font-semibold hover:text-blue-800 px-1'
+                                className='px-1 font-semibold text-blue-600 hover:text-blue-800 text-sm'
                             >
                                 send
                             </button>
@@ -322,13 +434,67 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
 /* ─── Tracking List View ─────────────────────────────────────── */
 const Tracking = () => {
-    const { reports = [], sidebarOpen, userEmail, roles = {} } = useOutletContext() ?? {};
+    const { sidebarOpen, userEmail, roles = {} } = useOutletContext() ?? {};
     const isAdmin = (roles[userEmail] ?? 'user') === 'admin';
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
     const [search, setSearch] = useState('');
     const [selectedTicket, setSelectedTicket] = useState(null);
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedOrg, setSelectedOrg] = useState(null);
+
+    // Sync selected org
+    useEffect(() => {
+        const loadOrg = () => {
+            const saved = localStorage.getItem('selectedOrganization');
+            const org = saved ? JSON.parse(saved) : null;
+            setSelectedOrg(prev => prev?.id !== org?.id ? org : prev);
+        };
+        loadOrg();
+        const iv = setInterval(loadOrg, 500);
+        return () => clearInterval(iv);
+    }, []);
+
+    // Fetch enriched group tickets
+    useEffect(() => {
+        if (!selectedOrg?.id) { setReports([]); return; }
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        setLoading(true);
+        fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(data => {
+                const normalizeStatus = s => {
+                    if (!s) return 'Assigned';
+                    const m = { assigned: 'Assigned', solving: 'Solving', solved: 'Solved', failed: 'Failed', draft: 'Draft' };
+                    return m[s.toLowerCase()] || s;
+                };
+                const mapped = (data.result || []).map(g => ({
+                    id: g.id,
+                    groupId: g.id,
+                    ticketId: g.predictions?.[0]?.TicketId || null,
+                    predictionId: g.predictionId || g.predictions?.[0]?.id || null,
+                    topicName: g.Title,
+                    message: g.predictions?.[0]?.Detail || g.tickets?.[0]?.Detail || '',
+                    organization: selectedOrg.name || `Org #${g.OrganizationId}`,
+                    orgId: g.OrganizationId,
+                    status: normalizeStatus(g.status),
+                    date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
+                    topic: g.Title,
+                    assignedTo: g.assignees || [],
+                    timeline: (g.timeline || []),
+                    createdBy: { email: g.tickets?.[0] ? `User #${g.tickets[0].CreatedBy}` : 'Unknown' },
+                    followers: []
+                }));
+                setReports(mapped);
+            })
+            .catch(e => console.error('Fetch enriched groups error', e))
+            .finally(() => setLoading(false));
+    }, [selectedOrg?.id]);
 
     const activeTickets = reports.filter(r => r.status !== 'Solved' && r.status !== 'Failed').length;
     const assignedTickets = reports.filter(r => r.status === 'Assigned').length;
@@ -350,10 +516,10 @@ const Tracking = () => {
     };
 
     const StatCard = ({ label, count, icon }) => (
-        <div className='bg-white rounded-2xl p-6 shadow-md border-2 border-blue-200'>
-            <p className='text-gray-600 text-lg mb-3'>{label}</p>
-            <div className='flex items-center justify-between'>
-                <p className='text-4xl font-bold text-gray-800'>{count}</p>
+        <div className='bg-white shadow-md p-6 border-2 border-blue-200 rounded-2xl'>
+            <p className='mb-3 text-gray-600 text-lg'>{label}</p>
+            <div className='flex justify-between items-center'>
+                <p className='font-bold text-gray-800 text-4xl'>{count}</p>
                 <span className='text-3xl'>{icon}</span>
             </div>
         </div>
@@ -380,7 +546,7 @@ const Tracking = () => {
                     <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} isAdmin={isAdmin} />
                 ) : (
                     <>
-                        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 select-none'>
+                        <div className='gap-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-10 select-none'>
                             <StatCard label="Active Tickets" count={activeTickets} icon={<LuSend />} />
                             <StatCard label="Assigned" count={assignedTickets} icon={<MdAccessTime />} />
                             <StatCard label="Solving" count={solvingTickets} icon={<LuWrench />} />
@@ -395,41 +561,49 @@ const Tracking = () => {
                                     placeholder="Search"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
-                                    className='select-none w-full px-4 py-2 rounded-3xl border bg-white border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    className='bg-white px-4 py-2 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-full select-none'
                                 />
-                                <span className='absolute right-3 top-3 text-gray-400'><FiSearch /></span>
+                                <span className='top-3 right-3 absolute text-gray-400'><FiSearch /></span>
                             </div>
                         </div>
 
-                        {filtered.length === 0 ? (
-                            <div className='bg-gray-50 rounded-lg p-8 text-center'>
+                        {!selectedOrg ? (
+                            <div className='bg-gray-50 p-8 rounded-lg text-center'>
+                                <p className='text-gray-500 text-lg'>Please select an organization.</p>
+                            </div>
+                        ) : loading ? (
+                            <div className='bg-gray-50 p-8 rounded-lg text-center'>
+                                <p className='text-gray-500'>Loading tickets...</p>
+                            </div>
+                        ) : filtered.length === 0 ? (
+                            <div className='bg-gray-50 p-8 rounded-lg text-center'>
                                 <p className='text-gray-500 text-lg'>No submissions yet. Create a report to get started.</p>
                             </div>
                         ) : (
                             <div className='space-y-6'>
                                 {Object.entries(groupedByOrg).map(([organization, orgReports], orgIndex) => (
-                                    <div key={orgIndex} className='bg-blue-50 rounded-xl overflow-hidden border border-blue-200'>
-                                        <div className='bg-blue-100 px-6 py-3 border-b border-blue-200'>
-                                            <h2 className='text-lg font-bold text-blue-900'>Group {orgIndex + 1}</h2>
+                                    <div key={orgIndex} className='bg-blue-50 border border-blue-200 rounded-xl overflow-hidden'>
+                                        <div className='bg-blue-100 px-6 py-3 border-blue-200 border-b'>
+                                            <h2 className='font-bold text-blue-900 text-lg'>Group {orgIndex + 1}</h2>
                                         </div>
                                         <div className='space-y-3 p-4'>
                                             {orgReports.map((report, reportIndex) => (
                                                 <div
                                                     key={reportIndex}
                                                     onClick={() => setSelectedTicket(report)}
-                                                    className='bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer'
+                                                    className='bg-white shadow-sm hover:shadow-md p-4 rounded-lg transition-shadow cursor-pointer'
                                                 >
                                                     <div className='flex justify-between items-start mb-2'>
                                                         <div>
-                                                            <h3 className='text-lg font-bold text-gray-800'>{report.topicName}</h3>
-                                                            <p className='text-gray-600 mt-1 text-sm'>{report.message}</p>
+                                                            <h3 className='font-bold text-gray-800 text-lg'>{report.topicName}</h3>
+                                                            <p className='mt-1 text-gray-600 text-sm'>{report.message}</p>
                                                         </div>
                                                     </div>
-                                                    <div className='flex justify-between items-center pt-2 border-t border-gray-100'>
-                                                        <p className='text-xs text-gray-500'>
+                                                    <div className='flex justify-between items-center pt-2 border-gray-100 border-t'>
+                                                        <p className='text-gray-500 text-xs'>
                                                             <span className='font-semibold'>{report.organization}</span>
                                                         </p>
-                                                        <span className='text-xs text-gray-500 select-none'>{report.date}</span>
+                                                        <span className='text-gray-500 text-xs select-none'>{report.date}</span>
                                                     </div>
                                                 </div>
                                             ))}

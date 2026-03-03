@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { EXAMPLE_TICKETS } from '../constants/ticketExamples';
 import { ROLE_OPTIONS } from '../organization/roleOptions';
 
 const Tracking = () => {
@@ -8,49 +7,44 @@ const Tracking = () => {
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
-    // Sort state: { key: 'created'|'assigned'|'solved', dir: 'asc'|'desc'|null }
     const [sort, setSort] = useState({ key: null, dir: null });
+    const [userData, setUserData] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedOrg, setSelectedOrg] = useState(null);
 
-    const getRoleForUser = (email) => roles[email] ?? 'user';
-    const handleRoleChange = (email, newRole) => onRoleChange?.(email, newRole);
-
-    // Aggregate ticket data per user
-    const userData = useMemo(() => {
-        const map = {};
-
-        EXAMPLE_TICKETS.forEach(ticket => {
-            // Count created tickets
-            if (ticket.createdBy?.email) {
-                const { email, department } = ticket.createdBy;
-                if (!map[email]) {
-                    map[email] = { email, department, created: 0, assigned: 0, solved: 0 };
-                }
-                map[email].created += 1;
-            }
-
-            // Count assigned & solved tickets
-            if (ticket.assignedTo) {
-                const email = ticket.assignedTo;
-                if (!map[email]) {
-                    // Find department from createdBy if same user, else leave blank
-                    const dept = EXAMPLE_TICKETS.find(t => t.createdBy?.email === email)?.createdBy?.department || '';
-                    map[email] = { email, department: dept, created: 0, assigned: 0, solved: 0 };
-                }
-                map[email].assigned += 1;
-                if (ticket.status === 'Solved') {
-                    map[email].solved += 1;
-                }
-            }
-        });
-
-        return Object.values(map);
+    useEffect(() => {
+        const loadOrg = () => {
+            const saved = localStorage.getItem('selectedOrganization');
+            const org = saved ? JSON.parse(saved) : null;
+            setSelectedOrg(prev => prev?.id !== org?.id ? org : prev);
+        };
+        loadOrg();
+        const iv = setInterval(loadOrg, 500);
+        return () => clearInterval(iv);
     }, []);
+
+    useEffect(() => {
+        if (!selectedOrg?.id) { setUserData([]); return; }
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        setLoading(true);
+        fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/stats/members`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(data => setUserData(data.result || []))
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
+    }, [selectedOrg?.id]);
+
+    const getRoleForUser = (identifier) => roles[identifier] ?? 'user';
+    const handleRoleChange = (identifier, newRole) => onRoleChange?.(identifier, newRole);
 
     // Apply sorting
     const sortedData = useMemo(() => {
         if (!sort.key || !sort.dir) return userData;
         return [...userData].sort((a, b) => {
-            const diff = a[sort.key] - b[sort.key];
+            const diff = (a[sort.key] || 0) - (b[sort.key] || 0);
             return sort.dir === 'asc' ? diff : -diff;
         });
     }, [userData, sort]);
@@ -71,31 +65,31 @@ const Tracking = () => {
     return (
         <div className={containerClasses}>
             <div className='p-3 sm:p-6 md:p-8'>
-                <div className='bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden'>
+                <div className='bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden'>
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-160'>
                             <thead>
                                 <tr className='bg-[#DBEAFE]'>
-                                    <th className='text-left px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm'>
+                                    <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-left'>
                                         User
                                     </th>
-                                    <th className='text-left px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm'>
+                                    <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-left'>
                                         Department
                                     </th>
                                     <th
-                                        className='px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm text-center cursor-pointer select-none hover:bg-blue-100 transition-colors whitespace-nowrap'
+                                        className='hover:bg-blue-100 px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
                                         onClick={() => handleSort('created')}
                                     >
                                         Created Tickets <SortIcon colKey='created' />
                                     </th>
                                     <th
-                                        className='px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm text-center cursor-pointer select-none hover:bg-blue-100 transition-colors whitespace-nowrap'
+                                        className='hover:bg-blue-100 px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
                                         onClick={() => handleSort('assigned')}
                                     >
                                         Assigned Tickets <SortIcon colKey='assigned' />
                                     </th>
                                     <th
-                                        className='px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm text-center cursor-pointer select-none hover:bg-blue-100 transition-colors whitespace-nowrap'
+                                        className='hover:bg-blue-100 px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
                                         onClick={() => handleSort('solved')}
                                     >
                                         Solved Tickets <SortIcon colKey='solved' />
@@ -103,19 +97,25 @@ const Tracking = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedData.map((user, idx) => (
+                                {!selectedOrg ? (
+                                    <tr><td colSpan={5} className='px-6 py-12 text-gray-400 text-sm text-center'>Please select an organization.</td></tr>
+                                ) : loading ? (
+                                    <tr><td colSpan={5} className='px-6 py-12 text-gray-400 text-sm text-center'>Loading member stats...</td></tr>
+                                ) : sortedData.map((user, idx) => (
                                     <tr
-                                        key={user.email}
+                                        key={user.userId}
                                         className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                                     >
                                         <td className='px-4 md:px-6 py-3 md:py-4'>
                                             <div className='flex flex-col items-start gap-1.5'>
-                                                <span className='text-gray-800 text-xs md:text-sm break-all'>{user.email}</span>
+                                                <span className='text-gray-800 text-xs md:text-sm break-all'>
+                                                    User #{user.userId}{user.isAdmin ? ' (Admin)' : ''}
+                                                </span>
                                                 {getRoleForUser(userEmail) === 'admin' && (
                                                     <select
-                                                        value={getRoleForUser(user.email)}
-                                                        onChange={(e) => handleRoleChange(user.email, e.target.value)}
-                                                        className='border border-gray-300 rounded-md px-2 py-1 text-xs md:text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer'
+                                                        value={getRoleForUser(`user-${user.userId}`)}
+                                                        onChange={(e) => handleRoleChange(`user-${user.userId}`, e.target.value)}
+                                                        className='bg-white px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700 text-xs md:text-sm cursor-pointer'
                                                     >
                                                         {ROLE_OPTIONS.map(role => (
                                                             <option key={role.id} value={role.id}>{role.label}</option>
@@ -124,15 +124,15 @@ const Tracking = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>{user.department}</td>
+                                        <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>{user.department || '—'}</td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.created}</td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.assigned}</td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.solved}</td>
                                     </tr>
                                 ))}
-                                {sortedData.length === 0 && (
+                                {sortedData.length === 0 && selectedOrg && !loading && (
                                     <tr>
-                                        <td colSpan={5} className='px-6 py-12 text-center text-gray-400 text-sm'>
+                                        <td colSpan={5} className='px-6 py-12 text-gray-400 text-sm text-center'>
                                             No user data available.
                                         </td>
                                     </tr>
