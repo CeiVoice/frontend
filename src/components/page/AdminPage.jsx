@@ -12,12 +12,14 @@ const AdminPage = () => {
     const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
     const [selectedOrg, setSelectedOrg] = useState(null);
+    const [orgLoaded, setOrgLoaded] = useState(false);
 
     useEffect(() => {
         const loadOrg = () => {
             const saved = localStorage.getItem('selectedOrganization');
             const org = saved ? JSON.parse(saved) : null;
             setSelectedOrg(prev => prev?.id !== org?.id ? org : prev);
+            setOrgLoaded(true);
         };
         loadOrg();
         const iv = setInterval(loadOrg, 500);
@@ -54,6 +56,8 @@ const AdminPage = () => {
         else setDraftTickets([]);
     }, [selectedOrg?.id]);
 
+    const isAdmin = selectedOrg?.isAdmin === true;
+
     const containerClasses = `w-full h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
@@ -78,6 +82,29 @@ const AdminPage = () => {
         acc[key].push(draft);
         return acc;
     }, {});
+
+    if (!orgLoaded) {
+        return (
+            <div className={containerClasses}>
+                <div className='flex justify-center items-center h-full'>
+                    <p className='text-gray-400'>Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (orgLoaded && selectedOrg && !isAdmin) {
+        return (
+            <div className={containerClasses}>
+                <div className='flex justify-center items-center h-full'>
+                    <div className='bg-white shadow-md p-8 rounded-xl text-center'>
+                        <p className='font-semibold text-gray-700 text-xl'>Access Denied</p>
+                        <p className='mt-2 text-gray-500 text-sm'>You must be an admin of this organization to view this page.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (showDetailPage && selectedDraft) {
         return (

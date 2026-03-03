@@ -14,10 +14,10 @@ const Side = ({ isOpen = true }) => {
       className={`fixed left-0 top-16 md:top-20 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] w-56 sm:w-60 md:w-64 bg-white shadow-md border-r border-gray-200 z-40 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
     >
       <div className='h-full overflow-y-auto'>
-        <div className='flex flex-col px-6 gap-6'>
+        <div className='flex flex-col gap-6 px-6'>
           <button onClick={() => navigate('/user')} className={`mt-8 ${linkClass('/user')}`}>User</button>
           <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
-          {/* <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button> */}
+          <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
           <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>
         </div>
       </div>

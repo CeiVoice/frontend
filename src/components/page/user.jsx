@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { ROLE_OPTIONS } from '../organization/roleOptions';
 
 const Tracking = () => {
-    const { sidebarOpen, userEmail, roles = {}, onRoleChange } = useOutletContext() ?? {};
+    const { sidebarOpen } = useOutletContext() ?? {};
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
@@ -11,6 +10,8 @@ const Tracking = () => {
     const [userData, setUserData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedOrg, setSelectedOrg] = useState(null);
+
+    const isAdmin = selectedOrg?.isAdmin === true;
 
     useEffect(() => {
         const loadOrg = () => {
@@ -36,9 +37,6 @@ const Tracking = () => {
             .catch(e => console.error(e))
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
-
-    const getRoleForUser = (identifier) => roles[identifier] ?? 'user';
-    const handleRoleChange = (identifier, newRole) => onRoleChange?.(identifier, newRole);
 
     // Apply sorting
     const sortedData = useMemo(() => {
@@ -109,19 +107,8 @@ const Tracking = () => {
                                         <td className='px-4 md:px-6 py-3 md:py-4'>
                                             <div className='flex flex-col items-start gap-1.5'>
                                                 <span className='text-gray-800 text-xs md:text-sm break-all'>
-                                                    User #{user.userId}{user.isAdmin ? ' (Admin)' : ''}
+                                                    {user.email || `User #${user.userId}`}{user.isAdmin ? ' (Admin)' : ''}
                                                 </span>
-                                                {getRoleForUser(userEmail) === 'admin' && (
-                                                    <select
-                                                        value={getRoleForUser(`user-${user.userId}`)}
-                                                        onChange={(e) => handleRoleChange(`user-${user.userId}`, e.target.value)}
-                                                        className='bg-white px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700 text-xs md:text-sm cursor-pointer'
-                                                    >
-                                                        {ROLE_OPTIONS.map(role => (
-                                                            <option key={role.id} value={role.id}>{role.label}</option>
-                                                        ))}
-                                                    </select>
-                                                )}
                                             </div>
                                         </td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>{user.department || '—'}</td>

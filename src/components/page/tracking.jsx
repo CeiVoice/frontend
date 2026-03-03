@@ -434,8 +434,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
 /* ─── Tracking List View ─────────────────────────────────────── */
 const Tracking = () => {
-    const { sidebarOpen, userEmail, roles = {} } = useOutletContext() ?? {};
-    const isAdmin = (roles[userEmail] ?? 'user') === 'admin';
+    const { sidebarOpen } = useOutletContext() ?? {};
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
@@ -444,6 +443,8 @@ const Tracking = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedOrg, setSelectedOrg] = useState(null);
+
+    const isAdmin = selectedOrg?.isAdmin === true;
 
     // Sync selected org
     useEffect(() => {
@@ -473,22 +474,34 @@ const Tracking = () => {
                     const m = { assigned: 'Assigned', solving: 'Solving', solved: 'Solved', failed: 'Failed', draft: 'Draft' };
                     return m[s.toLowerCase()] || s;
                 };
+                // Each group = one GroupTicket; predictions = TicketPredictions inside it
                 const mapped = (data.result || []).map(g => ({
                     id: g.id,
-                    groupId: g.id,
-                    ticketId: g.predictions?.[0]?.TicketId || null,
-                    predictionId: g.predictionId || g.predictions?.[0]?.id || null,
-                    topicName: g.Title,
-                    message: g.predictions?.[0]?.Detail || g.tickets?.[0]?.Detail || '',
-                    organization: selectedOrg.name || `Org #${g.OrganizationId}`,
-                    orgId: g.OrganizationId,
+                    title: g.Title,
                     status: normalizeStatus(g.status),
                     date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
-                    topic: g.Title,
-                    assignedTo: g.assignees || [],
-                    timeline: (g.timeline || []),
-                    createdBy: { email: g.tickets?.[0] ? `User #${g.tickets[0].CreatedBy}` : 'Unknown' },
-                    followers: []
+                    assignees: g.assignees || [],
+                    timeline: g.timeline || [],
+                    predictions: (g.predictions || []).map(p => {
+                        const matchedTicket = (g.tickets || []).find(t => t.id === p.TicketId);
+                        return {
+                            id: p.TicketId || p.id,
+                            groupId: g.id,
+                            ticketId: p.TicketId,
+                            predictionId: p.id,
+                            topicName: p.Title || g.Title,
+                            message: p.Detail || matchedTicket?.Detail || '',
+                            organization: selectedOrg.name || `Org #${g.OrganizationId}`,
+                            orgId: g.OrganizationId,
+                            status: normalizeStatus(g.status),
+                            date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
+                            topic: g.Title,
+                            assignedTo: g.assignees || [],
+                            timeline: g.timeline || [],
+                            createdBy: { email: matchedTicket?.CreatedByEmail || (matchedTicket ? `User #${matchedTicket.CreatedBy}` : 'Unknown') },
+                            followers: []
+                        };
+                    })
                 }));
                 setReports(mapped);
             })
@@ -496,11 +509,12 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    const activeTickets = reports.filter(r => r.status !== 'Solved' && r.status !== 'Failed').length;
-    const assignedTickets = reports.filter(r => r.status === 'Assigned').length;
-    const solvingTickets = reports.filter(r => r.status === 'Solving').length;
-    const solvedTickets = reports.filter(r => r.status === 'Solved').length;
-    const failedTickets = reports.filter(r => r.status === 'Failed').length;
+    // Stats: count groups by status
+    const activeTickets = reports.filter(g => g.status !== 'Solved' && g.status !== 'Failed').length;
+    const assignedTickets = reports.filter(g => g.status === 'Assigned').length;
+    const solvingTickets = reports.filter(g => g.status === 'Solving').length;
+    const solvedTickets = reports.filter(g => g.status === 'Solved').length;
+    const failedTickets = reports.filter(g => g.status === 'Failed').length;
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
@@ -525,19 +539,18 @@ const Tracking = () => {
         </div>
     );
 
-    const filtered = reports.filter(r =>
-        r.topicName?.toLowerCase().includes(search.toLowerCase()) ||
-        r.message?.toLowerCase().includes(search.toLowerCase()) ||
-        r.topic?.toLowerCase().includes(search.toLowerCase())
-    );
-
-    // Group tickets by organization
-    const groupedByOrg = filtered.reduce((acc, report) => {
-        const org = report.organization || 'Uncategorized';
-        if (!acc[org]) acc[org] = [];
-        acc[org].push(report);
-        return acc;
-    }, {});
+    const filteredGroups = reports
+        .map(g => ({
+            ...g,
+            predictions: (g.predictions || []).filter(p =>
+                p.topicName?.toLowerCase().includes(search.toLowerCase()) ||
+                p.message?.toLowerCase().includes(search.toLowerCase())
+            )
+        }))
+        .filter(g =>
+            g.title?.toLowerCase().includes(search.toLowerCase()) ||
+            g.predictions.length > 0
+        );
 
     return (
         <div className={containerClasses}>
@@ -575,35 +588,42 @@ const Tracking = () => {
                             <div className='bg-gray-50 p-8 rounded-lg text-center'>
                                 <p className='text-gray-500'>Loading tickets...</p>
                             </div>
-                        ) : filtered.length === 0 ? (
+                        ) : filteredGroups.length === 0 ? (
                             <div className='bg-gray-50 p-8 rounded-lg text-center'>
                                 <p className='text-gray-500 text-lg'>No submissions yet. Create a report to get started.</p>
                             </div>
                         ) : (
                             <div className='space-y-6'>
-                                {Object.entries(groupedByOrg).map(([organization, orgReports], orgIndex) => (
-                                    <div key={orgIndex} className='bg-blue-50 border border-blue-200 rounded-xl overflow-hidden'>
+                                {filteredGroups.map((group) => (
+                                    <div key={group.id} className='bg-blue-50 border border-blue-200 rounded-xl overflow-hidden'>
                                         <div className='bg-blue-100 px-6 py-3 border-blue-200 border-b'>
-                                            <h2 className='font-bold text-blue-900 text-lg'>Group {orgIndex + 1}</h2>
+                                            <div className='flex items-center gap-3'>
+                                                <h2 className='font-bold text-blue-900 text-lg'>Group #{group.id}</h2>
+                                                <span className='font-semibold text-blue-700 text-base'>— {group.title}</span>
+                                            </div>
+                                            <p className='mt-0.5 text-blue-600 text-xs'>{group.predictions.length} ticket{group.predictions.length !== 1 ? 's' : ''} · {group.status} · {group.date}</p>
                                         </div>
                                         <div className='space-y-3 p-4'>
-                                            {orgReports.map((report, reportIndex) => (
+                                            {group.predictions.length === 0 ? (
+                                                <p className='py-4 text-gray-400 text-sm text-center'>No tickets in this group.</p>
+                                            ) : group.predictions.map((prediction, predIndex) => (
                                                 <div
-                                                    key={reportIndex}
-                                                    onClick={() => setSelectedTicket(report)}
+                                                    key={predIndex}
+                                                    onClick={() => setSelectedTicket(prediction)}
                                                     className='bg-white shadow-sm hover:shadow-md p-4 rounded-lg transition-shadow cursor-pointer'
                                                 >
                                                     <div className='flex justify-between items-start mb-2'>
-                                                        <div>
-                                                            <h3 className='font-bold text-gray-800 text-lg'>{report.topicName}</h3>
-                                                            <p className='mt-1 text-gray-600 text-sm'>{report.message}</p>
+                                                        <div className='flex-1'>
+                                                            <div className='flex items-center gap-2 mb-0.5'>
+                                                                <span className='font-mono text-gray-400 text-xs'>#{String(prediction.ticketId || prediction.id).padStart(5, '0')}</span>
+                                                                <h3 className='font-bold text-gray-800'>{prediction.topicName}</h3>
+                                                            </div>
+                                                            <p className='text-gray-600 text-sm'>{prediction.message}</p>
                                                         </div>
                                                     </div>
                                                     <div className='flex justify-between items-center pt-2 border-gray-100 border-t'>
-                                                        <p className='text-gray-500 text-xs'>
-                                                            <span className='font-semibold'>{report.organization}</span>
-                                                        </p>
-                                                        <span className='text-gray-500 text-xs select-none'>{report.date}</span>
+                                                        <span className='font-semibold text-gray-500 text-xs'>{prediction.organization}</span>
+                                                        <span className='text-gray-500 text-xs select-none'>{prediction.date}</span>
                                                     </div>
                                                 </div>
                                             ))}

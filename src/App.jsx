@@ -70,7 +70,6 @@ function App() {
         <Route path="user" element={<Tracking />} />
         <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
-        <Route path="assignee" element={<AssigneePage />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/signin'} replace />} />
     </Routes>
