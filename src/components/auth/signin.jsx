@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { IoMdArrowBack } from "react-icons/io";
 import API_BASE from '../../config/api';
+import frameLogo from '../../assets/Frame_6.png';
 function Signin({ onSuccess, onBack, onRegister }) {
     const [showPassword, setShowPassword] = useState(false);
     const handleSubmit = async (e) => {
@@ -57,7 +58,7 @@ function Signin({ onSuccess, onBack, onRegister }) {
         <div className='flex justify-center items-center bg-linear-to-tl from-[#4377E5] to-[#BFCDE9] w-screen h-screen'>
             <div className='bg-white shadow-lg p-6 sm:p-8 rounded-3xl w-full max-w-md sm:max-w-lg md:max-w-xl'>
                 <form onSubmit={handleSubmit} className='flex flex-col items-center gap-8 p-10 w-full'>
-                    <img src="/src/assets/Frame_6.png" alt="Frame" className='w-auto h-auto' />
+                    <img src={frameLogo} alt="Frame" className='w-auto h-auto' />
                     <p className='self-start text-black text-2xl'>Sign in</p>
                     <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="email" name='Gmail' placeholder='Example@gmail.com' required />
                     <div className='relative w-full'>

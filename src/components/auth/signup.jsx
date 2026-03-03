@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { IoMdArrowBack } from "react-icons/io";
 import API_BASE from '../../config/api';
+import frameLogo from '../../assets/Frame_6.png';
 function Signup({ onSuccess, onBack }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -81,7 +82,7 @@ function Signup({ onSuccess, onBack }) {
                     }}
                 />
                 <form onSubmit={handleSubmit} className='flex flex-col items-center gap-5 p-10 w-full'>
-                    <img src="/src/assets/Frame_6.png" alt="Frame" className='w-auto h-auto' />
+                    <img src={frameLogo} alt="Frame" className='w-auto h-auto' />
                     <p className='self-start text-black text-2xl'>Sign up</p>
                     <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="text" name='Fname' placeholder='First Name' required />
                     <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="text" name='Lname' placeholder='Last Name' required />
