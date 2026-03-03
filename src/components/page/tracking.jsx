@@ -16,13 +16,13 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
     // Fetch real comments when ticket detail opens
     useEffect(() => {
-        if (!ticket.groupId) return;
+        if (!ticket.predictionId) return;
         const fetchComments = async () => {
             const token = localStorage.getItem('authToken');
             if (!token) return;
             setCommentsLoading(true);
             try {
-                const res = await fetch(`http://localhost/api/comments/group/${ticket.groupId}`, {
+                const res = await fetch(`http://localhost/api/comments/group/${ticket.predictionId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -43,21 +43,41 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
             }
         };
         fetchComments();
-    }, [ticket.groupId]);
+    }, [ticket.predictionId]);
 
     // ── Edit mode state ──
     const [isEditing, setIsEditing] = useState(false);
     const [editStatus, setEditStatus] = useState(ticket.status);
     const [editAssignees, setEditAssignees] = useState(
-        Array.isArray(ticket.assignedTo) ? [...ticket.assignedTo] : (ticket.assignedTo ? [ticket.assignedTo] : [])
+        Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []
     );
-    const [timeline, setTimeline] = useState(ticket.timeline ?? []);
+    const [timeline, setTimeline] = useState([]);
+
+    // Fetch ticket logs (timeline) when ticket detail opens
+    useEffect(() => {
+        if (!ticket.ticketId) return;
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        fetch(`http://localhost/api/tickets/${ticket.predictionId}/logs`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(data => {
+                const logs = data.result || [];
+                setTimeline(logs.map(l => ({
+                    status: String(l.status).toUpperCase(),
+                    date: new Date(l.CreatedAt).toLocaleString(),
+                    detail: ''
+                })));
+            })
+            .catch(e => console.error('Failed to load ticket logs', e));
+    }, [ticket.ticketId]);
     const [editNote, setEditNote] = useState('');
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [assigneeSearch, setAssigneeSearch] = useState('');
     const [orgMembers, setOrgMembers] = useState([]);
 
-    // Fetch org members for assignee dropdown
+    // Fetch org members for assignee dropdown — store {userId, email}
     useEffect(() => {
         const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
         if (!org) return;
@@ -67,12 +87,13 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
-            .then(d => setOrgMembers((d.result || []).map(m => `User #${m.userId}`)))
+            .then(d => setOrgMembers((d.result || []).map(m => ({ userId: m.userId, email: `User #${m.userId}` }))))
             .catch(() => {});
     }, []);
 
     const filteredUsers = orgMembers.filter(
-        u => u.toLowerCase().includes(assigneeSearch.toLowerCase()) && !editAssignees.includes(u)
+        u => u.email.toLowerCase().includes(assigneeSearch.toLowerCase()) &&
+            !editAssignees.find(a => a.userId === u.userId)
     );
 
     const handleSave = async () => {
@@ -83,16 +104,14 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
         const newStep = { status: editStatus.toUpperCase(), date: dateStr, detail: editNote.trim() };
 
-        if (['solved', 'failed'].includes(apiStatus) && ticket.ticketId && ticket.predictionId) {
+        // Persist status change for all statuses (not just solved/failed)
+        if (ticket.predictionId) {
             setSaving(true);
             try {
-                const res = await fetch(`http://localhost/api/tickets/${ticket.ticketId}/status`, {
+                const res = await fetch(`http://localhost/api/tickets/prediction/${ticket.predictionId}/status`, {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ predictionId: ticket.predictionId, status: apiStatus })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: apiStatus })
                 });
                 if (!res.ok) {
                     const err = await res.json();
@@ -112,7 +131,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
         setTimeline(prev => [...prev, newStep]);
         ticket.status = editStatus;
-        ticket.assignedTo = [...editAssignees];
+        ticket.assignedTo = editAssignees;
         ticket.timeline = [...timeline, newStep];
         setEditNote('');
         setIsEditing(false);
@@ -121,7 +140,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
     const handleRevert = () => {
         setEditStatus(ticket.status);
-        setEditAssignees(Array.isArray(ticket.assignedTo) ? [...ticket.assignedTo] : (ticket.assignedTo ? [ticket.assignedTo] : []));
+        setEditAssignees(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []);
         setEditNote('');
         setShowAssigneeDropdown(false);
         setAssigneeSearch('');
@@ -132,12 +151,25 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         setIsEditing(false);
     };
 
-    const removeAssignee = (email) => setEditAssignees(prev => prev.filter(a => a !== email));
+    const removeAssignee = (userId) => setEditAssignees(prev => prev.filter(a => a.userId !== userId));
 
-    const addAssignee = (email) => {
-        setEditAssignees(prev => [...prev, email]);
+    const addAssignee = async (member) => {
+        setEditAssignees(prev => [...prev, member]);
         setAssigneeSearch('');
         setShowAssigneeDropdown(false);
+        // Persist: call API with predictionId scoped assignment
+        const token = localStorage.getItem('authToken');
+        const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
+        if (!token || !ticket.predictionId || !org?.id) return;
+        try {
+            await fetch('http://localhost/api/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ GroupId: ticket.predictionId, AssigneeId: member.userId, OrgId: org.id })
+            });
+        } catch (e) {
+            console.error('Failed to persist assignee', e);
+        }
     };
 
     const handleSend = async () => {
@@ -147,7 +179,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         const pad = n => String(n).padStart(2, '0');
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
 
-        if (token && ticket.groupId) {
+        if (token && ticket.predictionId) {
             try {
                 const res = await fetch('http://localhost/api/comments', {
                     method: 'POST',
@@ -156,7 +188,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                        GroupId: ticket.groupId,
+                        GroupId: ticket.predictionId,
                         Detail: commentText.trim(),
                         isPublic: commentType === 'public'
                     })
@@ -258,7 +290,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                     </div>
                     <p className='mb-0.5 font-semibold text-gray-700'>{ticket.topicName}</p>
                     <p className='mb-1 text-gray-600 text-sm'>{ticket.message}</p>
-                    <p className='mb-3 text-gray-500 text-xs'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : [ticket.assignedTo]).join(', ')}</span></p>
+                    <p className='mb-3 text-gray-500 text-xs'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []).map(a => a.email).join(', ')}</span></p>
 
                     <p className='mb-2 font-semibold text-gray-700'>Tickets:</p>
                     <div className='space-y-3 max-h-64 overflow-y-auto'>
@@ -295,14 +327,14 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
                         <p className='mt-2 mb-1 font-semibold text-gray-500 text-xs uppercase tracking-wide'>Assignees</p>
                         <div>
-                            {/* Assignee pills — always visible; × button only active in edit mode */}
+                            {/* Assignee pills */}
                             <div className='flex flex-wrap gap-1.5 mb-2 min-h-6'>
-                                {(isEditing ? editAssignees : (Array.isArray(ticket.assignedTo) ? ticket.assignedTo : (ticket.assignedTo ? [ticket.assignedTo] : []))).map((a, i) => (
+                                {(isEditing ? editAssignees : (ticket.assignedTo || [])).map((a, i) => (
                                     <span key={i} className='flex items-center gap-1 bg-gray-100 px-2 py-0.5 border border-gray-300 rounded-full text-gray-700 text-xs'>
-                                        {a}
+                                        {a.email}
                                         {isEditing && (
                                             <button
-                                                onClick={() => removeAssignee(a)}
+                                                onClick={() => removeAssignee(a.userId)}
                                                 className='ml-0.5 font-bold text-gray-400 hover:text-red-500 leading-none'
                                             >
                                                 ×
@@ -339,7 +371,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                                                         onClick={() => addAssignee(u)}
                                                         className='hover:bg-blue-50 px-3 py-2 text-gray-700 text-xs cursor-pointer'
                                                     >
-                                                        {u}
+                                                        {u.email}
                                                     </li>
                                                 ))
                                             )}
@@ -439,6 +471,7 @@ const Tracking = () => {
         }`;
 
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('All'); // All | Assigned | Solving | Solved | Failed
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -493,10 +526,10 @@ const Tracking = () => {
                             message: p.Detail || matchedTicket?.Detail || '',
                             organization: selectedOrg.name || `Org #${g.OrganizationId}`,
                             orgId: g.OrganizationId,
-                            status: normalizeStatus(g.status),
+                            status: normalizeStatus(p.status),
                             date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
                             topic: g.Title,
-                            assignedTo: g.assignees || [],
+                            assignedTo: (p.assignees || []).map(a => ({ userId: a.id, email: a.email })),
                             timeline: g.timeline || [],
                             createdBy: { email: matchedTicket?.CreatedByEmail || (matchedTicket ? `User #${matchedTicket.CreatedBy}` : 'Unknown') },
                             followers: []
@@ -509,12 +542,13 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    // Stats: count groups by status
-    const activeTickets = reports.filter(g => g.status !== 'Solved' && g.status !== 'Failed').length;
-    const assignedTickets = reports.filter(g => g.status === 'Assigned').length;
-    const solvingTickets = reports.filter(g => g.status === 'Solving').length;
-    const solvedTickets = reports.filter(g => g.status === 'Solved').length;
-    const failedTickets = reports.filter(g => g.status === 'Failed').length;
+    // Stats: count all predictions by status
+    const allPredictions = reports.flatMap(g => g.predictions || []);
+    const activeTickets = allPredictions.filter(p => p.status !== 'Solved' && p.status !== 'Failed').length;
+    const assignedTickets = allPredictions.filter(p => p.status === 'Assigned').length;
+    const solvingTickets = allPredictions.filter(p => p.status === 'Solving').length;
+    const solvedTickets = allPredictions.filter(p => p.status === 'Solved').length;
+    const failedTickets = allPredictions.filter(p => p.status === 'Failed').length;
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
@@ -542,14 +576,17 @@ const Tracking = () => {
     const filteredGroups = reports
         .map(g => ({
             ...g,
-            predictions: (g.predictions || []).filter(p =>
-                p.topicName?.toLowerCase().includes(search.toLowerCase()) ||
-                p.message?.toLowerCase().includes(search.toLowerCase())
-            )
+            predictions: (g.predictions || []).filter(p => {
+                const matchSearch =
+                    p.topicName?.toLowerCase().includes(search.toLowerCase()) ||
+                    p.message?.toLowerCase().includes(search.toLowerCase());
+                const matchStatus = statusFilter === 'All' || p.status === statusFilter;
+                return matchSearch && matchStatus;
+            })
         }))
         .filter(g =>
-            g.title?.toLowerCase().includes(search.toLowerCase()) ||
-            g.predictions.length > 0
+            (statusFilter === 'All' || g.predictions.length > 0) &&
+            (g.title?.toLowerCase().includes(search.toLowerCase()) || g.predictions.length > 0)
         );
 
     return (
@@ -577,6 +614,25 @@ const Tracking = () => {
                                     className='bg-white px-4 py-2 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 w-full select-none'
                                 />
                                 <span className='top-3 right-3 absolute text-gray-400'><FiSearch /></span>
+                            </div>
+                            {/* Status filter pills */}
+                            <div className='flex flex-wrap items-center gap-2'>
+                                {['All', 'Assigned', 'Solving', 'Solved', 'Failed'].map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={() => setStatusFilter(s)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                                            statusFilter === s
+                                                ? s === 'Solved' ? 'bg-green-500 text-white border-green-500'
+                                                    : s === 'Failed' ? 'bg-red-500 text-white border-red-500'
+                                                    : s === 'Solving' ? 'bg-yellow-400 text-white border-yellow-400'
+                                                    : 'bg-[#4377E5] text-white border-[#4377E5]'
+                                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -620,6 +676,9 @@ const Tracking = () => {
                                                             </div>
                                                             <p className='text-gray-600 text-sm'>{prediction.message}</p>
                                                         </div>
+                                                        <span className={`ml-3 shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(prediction.status)}`}>
+                                                            {prediction.status}
+                                                        </span>
                                                     </div>
                                                     <div className='flex justify-between items-center pt-2 border-gray-100 border-t'>
                                                         <span className='font-semibold text-gray-500 text-xs'>{prediction.organization}</span>

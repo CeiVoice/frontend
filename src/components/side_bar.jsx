@@ -1,9 +1,20 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const Side = ({ isOpen = true }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const load = () => {
+      const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null')
+      setIsAdmin(org?.isAdmin === true)
+    }
+    load()
+    const iv = setInterval(load, 500)
+    return () => clearInterval(iv)
+  }, [])
 
   const linkClass = (path) =>
     `select-none text-left bg-transparent hover:text-gray-400 ${location.pathname === path ? 'text-[#4377E5] font-bold' : 'text-black'
@@ -15,11 +26,10 @@ const Side = ({ isOpen = true }) => {
     >
       <div className='h-full overflow-y-auto'>
         <div className='flex flex-col gap-6 px-6'>
-          <button onClick={() => navigate('/user')} className={`mt-8 ${linkClass('/user')}`}>User</button>
-          <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
-          <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
-          <button onClick={() => navigate('/admin-activity')} className={linkClass('/admin-activity')}>Admin_activity</button>
-          <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>
+          <button onClick={() => navigate('/tracking')} className={`mt-8 ${linkClass('/tracking')}`}>Tickets</button>
+          {isAdmin && <button onClick={() => navigate('/user')} className={linkClass('/user')}>User</button>}
+          {isAdmin && <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>}
+          {isAdmin && <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>}
         </div>
       </div>
     </aside>

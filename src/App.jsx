@@ -27,7 +27,7 @@ function App() {
   }, [])
 
   const handleSignout = () => {
-    localStorage.removeItem('authToken')
+    localStorage.clear()
     setIsLoggedIn(false)
     setUserEmail('')
     navigate('/signin', { replace: true })

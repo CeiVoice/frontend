@@ -1,18 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PiSidebarSimpleThin } from "react-icons/pi";
 import { FiSearch } from "react-icons/fi";
 import Dropbar from './organization/organization'
 
-function Top({ onToggleMenu, onCreate, onSignout, userEmail }) {
+function Top({ onToggleMenu, onCreate, onSignout }) {
     const [showSignout, setShowSignout] = useState(false);
+    const [userEmail, setUserEmail] = useState('');
+
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            setUserEmail(payload.email || '');
+        } catch {
+            setUserEmail('');
+        }
+    }, []);
     const navigate = useNavigate();
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white h-16 md:h-20 flex items-center px-3 sm:px-4 md:px-6 gap-2 sm:gap-3 md:gap-4 border border-gray-200">
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-1 sm:ml-0">
+        <header className="top-0 right-0 left-0 z-50 fixed flex items-center gap-2 sm:gap-3 md:gap-4 bg-white px-3 sm:px-4 md:px-6 border border-gray-200 w-full h-16 md:h-20">
+            <div className="flex items-center gap-2 sm:gap-3 ml-1 sm:ml-0 shrink-0">
                 <PiSidebarSimpleThin
                     size={28}
-                    className="cursor-pointer hover:text-gray-400"
+                    className="hover:text-gray-400 cursor-pointer"
                     onClick={onToggleMenu}
                 />
                 <div className="flex flex-row items-center">
@@ -21,25 +33,25 @@ function Top({ onToggleMenu, onCreate, onSignout, userEmail }) {
                         className="flex flex-row cursor-pointer"
                         onClick={() => navigate('/home')}
                     >
-                        <p className="text-black text-xl sm:text-2xl font-serif select-none">CEI</p>
-                        <p className="ml-1 text-[#4377E5] text-xl sm:text-2xl font-serif select-none">Voice</p>
+                        <p className="font-serif text-black text-xl sm:text-2xl select-none">CEI</p>
+                        <p className="ml-1 font-serif text-[#4377E5] text-xl sm:text-2xl select-none">Voice</p>
                     </button>
                 </div>
             </div>
-            <div className="ml-auto flex items-center gap-1 sm:gap-5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-5 ml-auto shrink-0">
                 <button
                     type="button"
                     onClick={onCreate}
-                    className='flex pointer-fine:hover:bg-blue-700 sm:ml-3 sm:mr-2 items-center justify-center gap-2 border rounded-3xl px-3 sm:px-4 h-10 w-10 sm:h-10 sm:w-25  cursor-pointer bg-[#4377E5] text-white shrink-0'
+                    className='flex justify-center items-center gap-2 bg-[#4377E5] pointer-fine:hover:bg-blue-700 sm:mr-2 sm:ml-3 px-3 sm:px-4 border rounded-3xl w-10 sm:w-25 h-10 sm:h-10 text-white cursor-pointer shrink-0'
                 >
                     <p className="text-base select-none">+</p>
                     <p className='hidden sm:block select-none'>Create</p>
                 </button>
                 {userEmail && (
-                    <div className="relative hidden md:block">
+                    <div className="hidden md:block relative">
                         <button
                             type="button"
-                            className="text-sm text-gray-700 max-w-45 truncate"
+                            className="max-w-45 text-gray-700 text-sm truncate"
                             title={userEmail}
                             onClick={() => setShowSignout((v) => !v)}
                         >
@@ -48,7 +60,7 @@ function Top({ onToggleMenu, onCreate, onSignout, userEmail }) {
                         {showSignout && (
                             <button
                                 type="button"
-                                className="absolute right-0 mt-8 w-28 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-100"
+                                className="right-0 absolute bg-white hover:bg-gray-100 shadow-sm mt-8 px-3 py-2 border border-gray-200 rounded-md w-28 text-gray-700 text-sm"
                                 onClick={() => {
                                     setShowSignout(false);
                                     onSignout?.();

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
 import { MdDrafts } from "react-icons/md";
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 
 const AdminPage = () => {
     const { sidebarOpen } = useOutletContext() ?? {};
-    const [showDetailPage, setShowDetailPage] = useState(false);
-    const [selectedDraft, setSelectedDraft] = useState(null);
+    const navigate = useNavigate();
     const [draftTickets, setDraftTickets] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -58,8 +57,7 @@ const AdminPage = () => {
 
     const isAdmin = selectedOrg?.isAdmin === true;
 
-    const containerClasses = `w-full h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
-        }`;
+    const containerClasses = `w-full h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'}`;
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
@@ -75,7 +73,6 @@ const AdminPage = () => {
         (d.Detail || '').toLowerCase().includes(search.toLowerCase())
     );
 
-    // Group by suggested GroupId (null = New Group)
     const groupedByTopic = filtered.reduce((acc, draft) => {
         const key = draft.GroupId ? `Merge → Group #${draft.GroupId}` : 'New Group';
         if (!acc[key]) acc[key] = [];
@@ -100,62 +97,6 @@ const AdminPage = () => {
                     <div className='bg-white shadow-md p-8 rounded-xl text-center'>
                         <p className='font-semibold text-gray-700 text-xl'>Access Denied</p>
                         <p className='mt-2 text-gray-500 text-sm'>You must be an admin of this organization to view this page.</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (showDetailPage && selectedDraft) {
-        return (
-            <div className={containerClasses}>
-                <div className='p-6 md:p-8'>
-                    <button
-                        onClick={() => { setShowDetailPage(false); setSelectedDraft(null); }}
-                        className='flex items-center gap-1 mb-6 text-gray-500 hover:text-gray-800 text-sm'
-                    >
-                        ← Back
-                    </button>
-                    <div className='bg-white shadow p-6 border border-gray-200 rounded-2xl'>
-                        <div className='flex flex-wrap items-center gap-2 mb-3'>
-                            <span className='font-bold text-gray-800 text-lg'>
-                                #{String(selectedDraft.TicketId).padStart(5, '0')}
-                            </span>
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(selectedDraft.status)}`}>
-                                {selectedDraft.status}
-                            </span>
-                            <span className='bg-orange-100 px-2.5 py-0.5 rounded-full font-semibold text-orange-700 text-xs'>Draft</span>
-                        </div>
-                        <h3 className='mb-1 font-bold text-gray-800 text-xl'>{selectedDraft.Title}</h3>
-                        <p className='mb-4 text-gray-600 text-sm'>{selectedDraft.Detail}</p>
-
-                        <div className='gap-4 grid grid-cols-2 mb-4 text-sm'>
-                            <div>
-                                <p className='mb-1 font-semibold text-gray-500 text-xs uppercase'>Match Score</p>
-                                <p className='font-bold text-blue-600'>{Math.round((selectedDraft.MatchScore || 0) * 100)}%</p>
-                            </div>
-                            <div>
-                                <p className='mb-1 font-semibold text-gray-500 text-xs uppercase'>Suggested Group</p>
-                                <p className='text-gray-700'>{selectedDraft.GroupId ? `Group #${selectedDraft.GroupId}` : 'New Group'}</p>
-                            </div>
-                            <div>
-                                <p className='mb-1 font-semibold text-gray-500 text-xs uppercase'>Suggested Assignee ID</p>
-                                <p className='text-gray-700'>{selectedDraft.assignee || 'None'}</p>
-                            </div>
-                            <div>
-                                <p className='mb-1 font-semibold text-gray-500 text-xs uppercase'>Submitted</p>
-                                <p className='text-gray-700'>
-                                    {selectedDraft.ticket ? new Date(selectedDraft.ticket.CreatedAt).toLocaleDateString() : '—'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {selectedDraft.Suggest && (
-                            <div className='bg-blue-50 p-4 border border-blue-200 rounded-xl'>
-                                <p className='mb-1 font-semibold text-blue-700 text-xs uppercase'>AI Suggestion</p>
-                                <p className='text-gray-700 text-sm'>{selectedDraft.Suggest}</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -233,7 +174,7 @@ const AdminPage = () => {
                                         <div
                                             key={idx}
                                             className='bg-white shadow-sm hover:shadow-md p-4 rounded-lg transition-shadow cursor-pointer'
-                                            onClick={() => { setSelectedDraft(draft); setShowDetailPage(true); }}
+                                            onClick={() => navigate('/admin-activity', { state: { draft, org: selectedOrg } })}
                                         >
                                             <div className='flex justify-between items-start mb-2'>
                                                 <div className='flex-1'>
