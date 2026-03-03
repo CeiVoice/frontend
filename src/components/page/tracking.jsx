@@ -9,7 +9,7 @@ import { ALL_USERS } from '../constants/users';
 
 /* ─── Ticket Detail View ─────────────────────────────────────── */
 
-const TicketDetail = ({ ticket, onBack }) => {
+const TicketDetail = ({ ticket, onBack, isAdmin }) => {
     const [commentText, setCommentText] = useState('');
     const [commentType, setCommentType] = useState('public'); // 'public' | 'internal'
     const [comments, setComments] = useState(
@@ -128,11 +128,11 @@ const TicketDetail = ({ ticket, onBack }) => {
                             Cancel
                         </button>
                     </div>
-                ) : (
+                ) : isAdmin ? (
                     <button onClick={() => setIsEditing(true)} className='px-4 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50'>
                         Edit
                     </button>
-                )}
+                ) : null}
             </div>
 
             {/* Two-column body */}
@@ -202,8 +202,8 @@ const TicketDetail = ({ ticket, onBack }) => {
                                     </span>
                                 ))}
                             </div>
-                            {/* +Add button — invisible but space-reserved when not editing */}
-                            <div className={`relative inline-block ${isEditing ? '' : 'invisible pointer-events-none'}`}>
+                            {/* +Add button — only visible to admins in edit mode */}
+                            <div className={`relative inline-block ${isAdmin && isEditing ? '' : 'invisible pointer-events-none'}`}>
                                 <button
                                     onClick={() => { setShowAssigneeDropdown(v => !v); setAssigneeSearch(''); }}
                                     className='text-xs text-blue-600 hover:text-blue-800 font-semibold border border-gray-300 rounded-full px-2.5 py-0.5 hover:bg-gray-50'
@@ -241,8 +241,8 @@ const TicketDetail = ({ ticket, onBack }) => {
                         </div>
                     </div>
 
-                    {/* Status buttons + note — always rendered to reserve space */}
-                    <div className={`${isEditing ? '' : 'invisible pointer-events-none'}`}>
+                    {/* Status buttons + note — only visible to admins in edit mode */}
+                    <div className={`${isAdmin && isEditing ? '' : 'invisible pointer-events-none'}`}>
                         <div className='flex flex-wrap gap-2 mb-2'>
                             {STATUS_OPTIONS.map(s => (
                                 <button
@@ -286,16 +286,18 @@ const TicketDetail = ({ ticket, onBack }) => {
 
                         {/* Comment input */}
                         <div className='flex items-center gap-2 flex-wrap'>
-                            {/* Public / Internal toggle */}
-                            <button
-                                onClick={() => setCommentType(t => t === 'public' ? 'internal' : 'public')}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${commentType === 'internal'
-                                    ? 'bg-yellow-400 text-white border-yellow-400'
-                                    : 'bg-red-500 text-white border-red-500'}`}
-                            >
-                                <span className='w-2 h-2 rounded-full bg-white inline-block' />
-                                {commentType === 'public' ? 'Public' : 'Internal'}
-                            </button>
+                            {/* Public / Internal toggle — admin only */}
+                            {isAdmin && (
+                                <button
+                                    onClick={() => setCommentType(t => t === 'public' ? 'internal' : 'public')}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${commentType === 'internal'
+                                        ? 'bg-yellow-400 text-white border-yellow-400'
+                                        : 'bg-red-500 text-white border-red-500'}`}
+                                >
+                                    <span className='w-2 h-2 rounded-full bg-white inline-block' />
+                                    {commentType === 'public' ? 'Public' : 'Internal'}
+                                </button>
+                            )}
                             <input
                                 type='text'
                                 value={commentText}
@@ -320,7 +322,8 @@ const TicketDetail = ({ ticket, onBack }) => {
 
 /* ─── Tracking List View ─────────────────────────────────────── */
 const Tracking = () => {
-    const { reports = [], sidebarOpen } = useOutletContext() ?? {};
+    const { reports = [], sidebarOpen, userEmail, roles = {} } = useOutletContext() ?? {};
+    const isAdmin = (roles[userEmail] ?? 'user') === 'admin';
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'ml-56 sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
@@ -335,7 +338,7 @@ const Tracking = () => {
 
     const getStatusBadgeColor = (status) => {
         switch (status) {
-            case 'Solving':
+            case 'Failed':
                 return 'bg-red-100 text-red-700';
             case 'Solving':
                 return 'bg-yellow-100 text-yellow-700';
@@ -374,7 +377,7 @@ const Tracking = () => {
         <div className={containerClasses}>
             <div className='p-6 md:p-8'>
                 {selectedTicket ? (
-                    <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} />
+                    <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} isAdmin={isAdmin} />
                 ) : (
                     <>
                         <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 select-none'>

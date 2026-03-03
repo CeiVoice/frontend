@@ -6,7 +6,6 @@ const statusColor = (status) => {
     switch (status?.toLowerCase()) {
         case 'solved': return 'bg-green-100 text-green-700';
         case 'solving': return 'bg-yellow-100 text-yellow-700';
-        case 'solving': return 'bg-yellow-100 text-yellow-700';
         case 'active': return 'bg-yellow-100 text-yellow-700';
         case 'failed': return 'bg-red-100 text-red-600';
         default: return 'bg-gray-100 text-gray-600';

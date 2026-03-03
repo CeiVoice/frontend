@@ -13,7 +13,12 @@ import AssigneePage from './components/page/Dashboard'
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [roles, setRoles] = useState({})
   const navigate = useNavigate()
+
+  const handleRoleChange = (email, newRole) => {
+    setRoles(prev => ({ ...prev, [email]: newRole }))
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('authToken')
@@ -55,7 +60,7 @@ function App() {
         path="/"
         element={
           isLoggedIn
-            ? <Layout userEmail={userEmail} onSignout={handleSignout} />
+            ? <Layout userEmail={userEmail} onSignout={handleSignout} roles={roles} onRoleChange={handleRoleChange} />
             : <Navigate to="/signin" replace />
         }
       >

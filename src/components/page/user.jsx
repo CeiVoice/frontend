@@ -4,20 +4,15 @@ import { EXAMPLE_TICKETS } from '../constants/ticketExamples';
 import { ROLE_OPTIONS } from '../organization/roleOptions';
 
 const Tracking = () => {
-    const { sidebarOpen } = useOutletContext() ?? {};
+    const { sidebarOpen, userEmail, roles = {}, onRoleChange } = useOutletContext() ?? {};
     const containerClasses = `w-full min-h-screen bg-transparent pt-16 md:pt-20 transition-all duration-300 ${sidebarOpen ? 'sm:ml-60 md:ml-64' : 'ml-0'
         }`;
 
     // Sort state: { key: 'created'|'assigned'|'solved', dir: 'asc'|'desc'|null }
     const [sort, setSort] = useState({ key: null, dir: null });
 
-    // Role state: { [email]: 'admin'|'user' }
-    const [roles, setRoles] = useState({});
-
     const getRoleForUser = (email) => roles[email] ?? 'user';
-    const handleRoleChange = (email, newRole) => {
-        setRoles(prev => ({ ...prev, [email]: newRole }));
-    };
+    const handleRoleChange = (email, newRole) => onRoleChange?.(email, newRole);
 
     // Aggregate ticket data per user
     const userData = useMemo(() => {
@@ -116,15 +111,17 @@ const Tracking = () => {
                                         <td className='px-4 md:px-6 py-3 md:py-4'>
                                             <div className='flex flex-col items-start gap-1.5'>
                                                 <span className='text-gray-800 text-xs md:text-sm break-all'>{user.email}</span>
-                                                <select
-                                                    value={getRoleForUser(user.email)}
-                                                    onChange={(e) => handleRoleChange(user.email, e.target.value)}
-                                                    className='border border-gray-300 rounded-md px-2 py-1 text-xs md:text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer'
-                                                >
-                                                    {ROLE_OPTIONS.map(role => (
-                                                        <option key={role.id} value={role.id}>{role.label}</option>
-                                                    ))}
-                                                </select>
+                                                {getRoleForUser(userEmail) === 'admin' && (
+                                                    <select
+                                                        value={getRoleForUser(user.email)}
+                                                        onChange={(e) => handleRoleChange(user.email, e.target.value)}
+                                                        className='border border-gray-300 rounded-md px-2 py-1 text-xs md:text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer'
+                                                    >
+                                                        {ROLE_OPTIONS.map(role => (
+                                                            <option key={role.id} value={role.id}>{role.label}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
                                             </div>
                                         </td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>{user.department}</td>

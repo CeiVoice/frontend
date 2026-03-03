@@ -7,7 +7,7 @@ import Confirmation from './components/ticket/confirmation';
 import Success from './components/ticket/success';
 import { EXAMPLE_TICKETS } from './components/constants/ticketExamples';
 
-function Layout({ userEmail, onSignout }) {
+function Layout({ userEmail, onSignout, roles, onRoleChange }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showReport, setShowReport] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -45,7 +45,7 @@ function Layout({ userEmail, onSignout }) {
             />
             <div className='flex flex-row'>
                 <Side isOpen={sidebarOpen} />
-                <Outlet context={{ reports, sidebarOpen }} />
+                <Outlet context={{ reports, sidebarOpen, userEmail, roles, onRoleChange }} />
             </div>
             {showReport && (
                 <div
