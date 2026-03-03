@@ -18,6 +18,7 @@ const Side = ({ isOpen = true }) => {
           <button onClick={() => navigate('/user')} className={`mt-8 ${linkClass('/user')}`}>User</button>
           <button onClick={() => navigate('/tracking')} className={linkClass('/tracking')}>Tickets</button>
           <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>
+          <button onClick={() => navigate('/admin-activity')} className={linkClass('/admin-activity')}>Admin_activity</button>
           <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>
         </div>
       </div>

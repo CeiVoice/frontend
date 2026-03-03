@@ -9,6 +9,7 @@ import Tracking from './components/page/user'
 import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
 import AssigneePage from './components/page/dashboard'
+import AdminActivity from './components/page/admin_activity'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -70,6 +71,7 @@ function App() {
         <Route path="user" element={<Tracking />} />
         <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="admin-activity" element={<AdminActivity />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/signin'} replace />} />
     </Routes>
