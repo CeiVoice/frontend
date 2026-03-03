@@ -116,7 +116,7 @@ const AssigneePage = () => {
                         <h2 className='text-base font-bold text-gray-800'>Recent Unresolved Ticket</h2>
                     </div>
                     <div className='overflow-x-auto'>
-                        <table className='w-full min-w-[520px]'>
+                        <table className='w-full min-w-130'>
                             <thead>
                                 <tr className='border-t border-gray-100'>
                                     <th className='text-left px-5 py-3 text-xs text-gray-400 font-semibold'>ID</th>

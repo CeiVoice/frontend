@@ -73,7 +73,7 @@ const Tracking = () => {
             <div className='p-3 sm:p-6 md:p-8'>
                 <div className='bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden'>
                     <div className='overflow-x-auto'>
-                        <table className='w-full min-w-[640px]'>
+                        <table className='w-full min-w-160'>
                             <thead>
                                 <tr className='bg-[#DBEAFE]'>
                                     <th className='text-left px-4 md:px-6 py-3 md:py-4 text-gray-700 font-semibold text-xs md:text-sm'>
