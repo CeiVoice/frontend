@@ -1,7 +1,17 @@
 import React from 'react'
 import { MdWarning } from 'react-icons/md'
 
-const Confirmation = ({ onConfirm, onCancel }) => {
+const Confirmation = ({ onConfirm, onCancel, isLoading }) => {
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-16 h-16 mb-6 rounded-full border-4 border-gray-200 border-t-[#4377E5] animate-spin" />
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Submitting...</h2>
+                <p className="text-gray-500 text-sm">Please wait while we process your ticket.</p>
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col items-center justify-center p-8 text-center">
             <MdWarning className="text-yellow-500 mb-6" size={80} />

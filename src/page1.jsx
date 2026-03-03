@@ -12,6 +12,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
     const [showReport, setShowReport] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [pendingMessage, setPendingMessage] = useState('');
     const [reports, setReports] = useState([]);
     const [submitError, setSubmitError] = useState(null);
@@ -33,6 +34,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
             return;
         }
 
+        setIsSubmitting(true);
         try {
             const decoded = jwtDecode(token);
             const res = await fetch('http://localhost/api/tickets/draft', {
@@ -61,6 +63,8 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
         } catch (err) {
             console.error('Submit ticket error:', err);
             alert('Failed to submit ticket. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -110,6 +114,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
                                 setShowConfirmation(false);
                                 setShowReport(true);
                             }}
+                            isLoading={isSubmitting}
                         />
                     </div>
                 </div>
