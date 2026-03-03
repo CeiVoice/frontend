@@ -87,7 +87,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
-            .then(d => setOrgMembers((d.result || []).map(m => ({ userId: m.userId, email: `User #${m.userId}` }))))
+            .then(d => setOrgMembers((d.result || []).map(m => ({ userId: m.userId, email: m.email || `User #${m.userId}` }))))
             .catch(() => {});
     }, []);
 
@@ -476,8 +476,20 @@ const Tracking = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedOrg, setSelectedOrg] = useState(null);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const isAdmin = selectedOrg?.isAdmin === true;
+
+    // Decode current user id from JWT token
+    useEffect(() => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                setCurrentUserId(payload.id ?? null);
+            }
+        } catch { }
+    }, []);
 
     // Sync selected org
     useEffect(() => {
@@ -491,24 +503,32 @@ const Tracking = () => {
         return () => clearInterval(iv);
     }, []);
 
-    // Fetch enriched group tickets
+    // Fetch enriched group tickets + member emails in parallel
     useEffect(() => {
         if (!selectedOrg?.id) { setReports([]); return; }
         const token = localStorage.getItem('authToken');
         if (!token) return;
         setLoading(true);
-        fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-            .then(r => r.json())
-            .then(data => {
+        Promise.all([
+            fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json()),
+            fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/stats/members`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json())
+        ])
+            .then(([groupsData, membersData]) => {
+                // Build userId → email lookup
+                const emailMap = {};
+                (membersData.result || []).forEach(m => { emailMap[m.userId] = m.email; });
+
                 const normalizeStatus = s => {
                     if (!s) return 'Assigned';
                     const m = { assigned: 'Assigned', solving: 'Solving', solved: 'Solved', failed: 'Failed', draft: 'Draft' };
                     return m[s.toLowerCase()] || s;
                 };
                 // Each group = one GroupTicket; predictions = TicketPredictions inside it
-                const mapped = (data.result || []).map(g => ({
+                const mapped = (groupsData.result || []).map(g => ({
                     id: g.id,
                     title: g.Title,
                     status: normalizeStatus(g.status),
@@ -517,6 +537,7 @@ const Tracking = () => {
                     timeline: g.timeline || [],
                     predictions: (g.predictions || []).map(p => {
                         const matchedTicket = (g.tickets || []).find(t => t.id === p.TicketId);
+                        // p.assignees is an array of userId numbers from the backend
                         return {
                             id: p.TicketId || p.id,
                             groupId: g.id,
@@ -529,9 +550,14 @@ const Tracking = () => {
                             status: normalizeStatus(p.status),
                             date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
                             topic: g.Title,
-                            assignedTo: (p.assignees || []).map(a => ({ userId: a.id, email: a.email })),
+                            assignedTo: (p.assignees || []).map(a => ({ userId: a, email: emailMap[a] || `User #${a}` })),
                             timeline: g.timeline || [],
-                            createdBy: { email: matchedTicket?.CreatedByEmail || (matchedTicket ? `User #${matchedTicket.CreatedBy}` : 'Unknown') },
+                            createdBy: {
+                                email: matchedTicket?.CreatedBy
+                                    ? (emailMap[matchedTicket.CreatedBy] || `User #${matchedTicket.CreatedBy}`)
+                                    : 'Unknown',
+                                userId: matchedTicket?.CreatedBy ?? null
+                            },
                             followers: []
                         };
                     })
@@ -581,7 +607,10 @@ const Tracking = () => {
                     p.topicName?.toLowerCase().includes(search.toLowerCase()) ||
                     p.message?.toLowerCase().includes(search.toLowerCase());
                 const matchStatus = statusFilter === 'All' || p.status === statusFilter;
-                return matchSearch && matchStatus;
+                const isAssignee = (p.assignedTo || []).some(a => a.userId === currentUserId);
+                const isOwner = p.createdBy?.userId !== null && p.createdBy?.userId === currentUserId;
+                const canView = isAdmin || isAssignee || isOwner;
+                return matchSearch && matchStatus && canView;
             })
         }))
         .filter(g =>

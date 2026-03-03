@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { DEPARTMENTS } from '../constants/departments';
 
 const Tracking = () => {
     const { sidebarOpen } = useOutletContext() ?? {};
@@ -65,6 +66,59 @@ const Tracking = () => {
         });
     }, [userData, sort, isAdmin, viewMode, currentUserId]);
 
+    const [toggling, setToggling] = useState(null); // memberId being toggled
+    const [updatingDept, setUpdatingDept] = useState(null); // memberId being updated
+
+    const handleChangeDept = async (user, dept) => {
+        const token = localStorage.getItem('authToken');
+        if (!token || !user.memberId) return;
+        setUpdatingDept(user.memberId);
+        try {
+            const res = await fetch(`http://localhost/api/organizations/member/${user.memberId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ DeptName: dept })
+            });
+            if (res.ok) {
+                setUserData(prev => prev.map(u =>
+                    u.memberId === user.memberId ? { ...u, department: dept } : u
+                ));
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to update department');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setUpdatingDept(null);
+        }
+    };
+
+    const handleToggleAdmin = async (user) => {
+        const token = localStorage.getItem('authToken');
+        if (!token || !user.memberId) return;
+        setToggling(user.memberId);
+        try {
+            const res = await fetch(`http://localhost/api/organizations/member/${user.memberId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ isAdmin: !user.isAdmin })
+            });
+            if (res.ok) {
+                setUserData(prev => prev.map(u =>
+                    u.memberId === user.memberId ? { ...u, isAdmin: !u.isAdmin } : u
+                ));
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to update admin status');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setToggling(null);
+        }
+    };
+
     const handleSort = (key) => {
         setSort(prev => {
             if (prev.key !== key) return { key, dir: 'asc' };
@@ -112,9 +166,7 @@ const Tracking = () => {
                                     <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-left'>
                                         User
                                     </th>
-                                    <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-left'>
-                                        Department
-                                    </th>
+                                    <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-left'>Department</th>
                                     <th
                                         className='hover:bg-blue-100 px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
                                         onClick={() => handleSort('created')}
@@ -127,12 +179,14 @@ const Tracking = () => {
                                     >
                                         Assigned Tickets <SortIcon colKey='assigned' />
                                     </th>
-                                    <th
-                                        className='hover:bg-blue-100 px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
+                                    <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center whitespace-nowrap transition-colors cursor-pointer select-none'
                                         onClick={() => handleSort('solved')}
                                     >
                                         Solved Tickets <SortIcon colKey='solved' />
                                     </th>
+                                    {isAdmin && viewMode === 'admin' && (
+                                        <th className='px-4 md:px-6 py-3 md:py-4 font-semibold text-gray-700 text-xs md:text-sm text-center'>Role</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -152,10 +206,44 @@ const Tracking = () => {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>{user.department || '—'}</td>
+                                        <td className='px-4 md:px-6 py-3 md:py-4 text-gray-600 text-xs md:text-sm'>
+                                            {isAdmin && viewMode === 'admin' ? (
+                                                <select
+                                                    value={user.department || ''}
+                                                    disabled={updatingDept === user.memberId}
+                                                    onChange={e => handleChangeDept(user, e.target.value)}
+                                                    className='bg-white disabled:opacity-50 px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[180px] text-xs'
+                                                >
+                                                    <option value=''>— Select dept —</option>
+                                                    {DEPARTMENTS.map(d => (
+                                                        <option key={d} value={d}>{d}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                user.department || '—'
+                                            )}
+                                        </td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.created}</td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.assigned}</td>
                                         <td className='px-4 md:px-6 py-3 md:py-4 text-gray-800 text-xs md:text-sm text-center'>{user.solved}</td>
+                                        {isAdmin && viewMode === 'admin' && (
+                                            <td className='px-4 md:px-6 py-3 md:py-4 text-center'>
+                                                {user.userId === currentUserId ? (
+                                                    <span className='text-gray-400 text-xs italic'>you</span>
+                                                ) : (
+                                                    <button
+                                                        disabled={toggling === user.memberId}
+                                                        onClick={() => handleToggleAdmin(user)}
+                                                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${user.isAdmin
+                                                            ? 'bg-blue-100 text-blue-700 border-blue-300 hover:bg-red-100 hover:text-red-700 hover:border-red-300'
+                                                            : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300'
+                                                        } disabled:opacity-50`}
+                                                    >
+                                                        {toggling === user.memberId ? '…' : user.isAdmin ? 'Admin' : 'User'}
+                                                    </button>
+                                                )}
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                                 {sortedData.length === 0 && selectedOrg && !loading && (
