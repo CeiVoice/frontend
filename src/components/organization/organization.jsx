@@ -3,6 +3,7 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { IoSettingsOutline } from "react-icons/io5";
 import { TiUserAddOutline } from "react-icons/ti";
 import { jwtDecode } from 'jwt-decode'
+import API_BASE from '../../config/api'
 import InviteOrg from './invite_org'
 import CreateOrganization from './CreateOrganization'
 import { ORGANIZATIONS } from '../constants/organizationMembers'
@@ -25,7 +26,7 @@ export default function Dropbar({ className = '' }) {
       console.log('Decoded token:', decoded)
 
       // Fetch user's memberships
-      const url = `http://localhost/api/organizations/member/user/${decoded.id}`
+      const url = `${API_BASE}/api/organizations/member/user/${decoded.id}`
       console.log('Fetching from:', url)
 
       const res = await fetch(url, {
@@ -54,7 +55,7 @@ export default function Dropbar({ className = '' }) {
             // Fetch member count for each organization
             let memberCount = 0
             try {
-              const memberRes = await fetch(`http://localhost/api/organizations/member/org/${member.OrganizationId}`, {
+              const memberRes = await fetch(`${API_BASE}/api/organizations/member/org/${member.OrganizationId}`, {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json",
@@ -115,7 +116,7 @@ export default function Dropbar({ className = '' }) {
   }
 
   const handleOrganize_change = async (e) => {
-    const url = `http://localhost/organization/${e}`
+    const url = `${API_BASE}/organization/${e}`
     try {
       const res = await fetch(url, {
         method: "GET",

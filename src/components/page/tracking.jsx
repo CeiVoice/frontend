@@ -4,6 +4,7 @@ import { LuSend, LuWrench } from "react-icons/lu";
 import { MdAccessTime } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline, IoMdCloseCircle } from "react-icons/io";
 import { FiSearch } from "react-icons/fi";
+import API_BASE from '../../config/api';
 
 /* ─── Ticket Detail View ─────────────────────────────────────── */
 
@@ -22,7 +23,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
             if (!token) return;
             setCommentsLoading(true);
             try {
-                const res = await fetch(`http://localhost/api/comments/group/${ticket.predictionId}`, {
+                const res = await fetch(`${API_BASE}/api/comments/group/${ticket.predictionId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -58,7 +59,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         if (!ticket.ticketId) return;
         const token = localStorage.getItem('authToken');
         if (!token) return;
-        fetch(`http://localhost/api/tickets/${ticket.predictionId}/logs`, {
+        fetch(`${API_BASE}/api/tickets/${ticket.predictionId}/logs`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -83,7 +84,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         if (!org) return;
         const token = localStorage.getItem('authToken');
         if (!token) return;
-        fetch(`http://localhost/api/tickets/org/${org.id}/stats/members`, {
+        fetch(`${API_BASE}/api/tickets/org/${org.id}/stats/members`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -108,7 +109,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         if (ticket.predictionId) {
             setSaving(true);
             try {
-                const res = await fetch(`http://localhost/api/tickets/prediction/${ticket.predictionId}/status`, {
+                const res = await fetch(`${API_BASE}/api/tickets/prediction/${ticket.predictionId}/status`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ status: apiStatus })
@@ -162,7 +163,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
         if (!token || !ticket.predictionId || !org?.id) return;
         try {
-            await fetch('http://localhost/api/assignments', {
+            await fetch(`${API_BASE}/api/assignments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ GroupId: ticket.predictionId, AssigneeId: member.userId, OrgId: org.id })
@@ -181,7 +182,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
 
         if (token && ticket.predictionId) {
             try {
-                const res = await fetch('http://localhost/api/comments', {
+                const res = await fetch(`${API_BASE}/api/comments`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -510,10 +511,10 @@ const Tracking = () => {
         if (!token) return;
         setLoading(true);
         Promise.all([
-            fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
+            fetch(`${API_BASE}/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }).then(r => r.json()),
-            fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/stats/members`, {
+            fetch(`${API_BASE}/api/tickets/org/${selectedOrg.id}/stats/members`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }).then(r => r.json())
         ])

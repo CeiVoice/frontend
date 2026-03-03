@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { DEPARTMENTS } from '../constants/departments';
+import API_BASE from '../../config/api';
 
 const Tracking = () => {
     const { sidebarOpen } = useOutletContext() ?? {};
@@ -43,7 +44,7 @@ const Tracking = () => {
         const token = localStorage.getItem('authToken');
         if (!token) return;
         setLoading(true);
-        fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/stats/members`, {
+        fetch(`${API_BASE}/api/tickets/org/${selectedOrg.id}/stats/members`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -74,7 +75,7 @@ const Tracking = () => {
         if (!token || !user.memberId) return;
         setUpdatingDept(user.memberId);
         try {
-            const res = await fetch(`http://localhost/api/organizations/member/${user.memberId}`, {
+            const res = await fetch(`${API_BASE}/api/organizations/member/${user.memberId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ DeptName: dept })
@@ -99,7 +100,7 @@ const Tracking = () => {
         if (!token || !user.memberId) return;
         setToggling(user.memberId);
         try {
-            const res = await fetch(`http://localhost/api/organizations/member/${user.memberId}`, {
+            const res = await fetch(`${API_BASE}/api/organizations/member/${user.memberId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ isAdmin: !user.isAdmin })

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import API_BASE from '../../config/api'
 
 function CreateOrganization({ onClose, onCreate }) {
     const [orgName, setOrgName] = useState('')
@@ -21,7 +22,7 @@ function CreateOrganization({ onClose, onCreate }) {
         setError('')
 
         try {
-            const response = await fetch('http://localhost/api/organizations/organization', {
+            const response = await fetch(`${API_BASE}/api/organizations/organization`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

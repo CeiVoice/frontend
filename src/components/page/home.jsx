@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import API_BASE from '../../config/api'
 
 const Home = () => {
     const { sidebarOpen = true } = useOutletContext() ?? {}
@@ -35,7 +36,7 @@ const Home = () => {
             setLoading(true)
             setError(null)
             try {
-                const res = await fetch(`http://localhost/api/tickets/org/${selectedOrg.id}`, {
+                const res = await fetch(`${API_BASE}/api/tickets/org/${selectedOrg.id}`, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`

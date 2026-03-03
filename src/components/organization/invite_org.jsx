@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ROLE_OPTIONS } from './roleOptions'
 import { DEPARTMENTS } from '../constants/departments'
+import API_BASE from '../../config/api'
 
 function InviteOrg({ onClose, onInviteSuccess }) {
     const [roleOpen, setRoleOpen] = useState(false)
@@ -40,7 +41,7 @@ function InviteOrg({ onClose, onInviteSuccess }) {
 
         try {
             for (const email of emailList) {
-                const response = await fetch('http://localhost/api/organizations/member', {
+                const response = await fetch(`${API_BASE}/api/organizations/member`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ function InviteOrg({ onClose, onInviteSuccess }) {
                                         placeholder="Search department..."
                                         value={deptSearch}
                                         onChange={(e) => setDeptSearch(e.target.value)}
-                                        className="bg-white/5 px-2 py-1 border border-white/10 rounded w-full text-white text-xs placeholder-white/40 outline-none"
+                                        className="bg-white/5 px-2 py-1 border border-white/10 rounded outline-none w-full text-white text-xs placeholder-white/40"
                                         autoFocus
                                     />
                                 </div>

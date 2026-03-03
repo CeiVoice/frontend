@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import API_BASE from '../../config/api';
 
 const statusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -36,7 +37,7 @@ const AssigneePage = () => {
         const token = localStorage.getItem('authToken');
         if (!token) return;
         setLoading(true);
-        fetch(`http://localhost/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
+        fetch(`${API_BASE}/api/tickets/org/${selectedOrg.id}/groups/enriched`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())

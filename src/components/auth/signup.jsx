@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin } from '@react-oauth/google';
 import { IoMdArrowBack } from "react-icons/io";
+import API_BASE from '../../config/api';
 function Signup({ onSuccess, onBack }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -13,7 +14,7 @@ function Signup({ onSuccess, onBack }) {
             return;
         }
 
-        const url = "http://localhost/auth/signup"
+        const url = `${API_BASE}/auth/signup`
         const payload = {
             Email: e.target.Gmail.value,
             Password: e.target.Password.value,
@@ -45,9 +46,29 @@ function Signup({ onSuccess, onBack }) {
     }
 
 
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            const res = await fetch(`${API_BASE}/auth/signin/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: credentialResponse.credential })
+            });
+            const data = await res.json();
+            if (data?.success && data?.token) {
+                localStorage.setItem('authToken', data.token.token ?? data.token);
+                onSuccess?.();
+                return;
+            }
+            alert(data?.error || 'Google sign in failed.');
+        } catch (err) {
+            console.error(err);
+            alert('Something went wrong. Please try again.');
+        }
+    };
+
     return (
-        <div className='flex bg-linear-to-tl from-[#4377E5] to-[#BFCDE9] w-screen h-screen justify-center items-center'>
-            <div className='bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg md:max-w-xl shadow-lg'>
+        <div className='flex justify-center items-center bg-linear-to-tl from-[#4377E5] to-[#BFCDE9] w-screen h-screen'>
+            <div className='bg-white shadow-lg p-6 sm:p-8 rounded-3xl w-full max-w-md sm:max-w-lg md:max-w-xl'>
                 <IoMdArrowBack
                     size={24}
                     className='cursor-pointer'
@@ -59,15 +80,15 @@ function Signup({ onSuccess, onBack }) {
                         }
                     }}
                 />
-                <form onSubmit={handleSubmit} className='flex flex-col items-center p-10 gap-5 w-full'>
+                <form onSubmit={handleSubmit} className='flex flex-col items-center gap-5 p-10 w-full'>
                     <img src="/src/assets/Frame_6.png" alt="Frame" className='w-auto h-auto' />
-                    <p className='text-black text-2xl self-start'>Sign up</p>
-                    <input className='rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Fname' placeholder='First Name' required />
-                    <input className='rounded-3xl w-full border block border-black px-3 py-2' type="text" name='Lname' placeholder='Last Name' required />
-                    <input className='rounded-3xl w-full border block border-black px-3 py-2' type="email" name='Gmail' placeholder='Example@gmail.com' required />
+                    <p className='self-start text-black text-2xl'>Sign up</p>
+                    <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="text" name='Fname' placeholder='First Name' required />
+                    <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="text" name='Lname' placeholder='Last Name' required />
+                    <input className='block px-3 py-2 border border-black rounded-3xl w-full' type="email" name='Gmail' placeholder='Example@gmail.com' required />
                     <div className='relative w-full'>
                         <input
-                            className=' rounded-3xl w-full border block border-black pr-10 px-3 py-2'
+                            className='block px-3 py-2 pr-10 border border-black rounded-3xl w-full'
                             type={showPassword ? 'text' : 'password'}
                             name='Password'
                             placeholder='Password'
@@ -75,7 +96,7 @@ function Signup({ onSuccess, onBack }) {
                         />
                         <button
                             type='button'
-                            className='absolute right-5 top-1/2 -translate-y-1/2 text-black-600 text-sm cursor-pointer'
+                            className='top-1/2 right-5 absolute text-black-600 text-sm -translate-y-1/2 cursor-pointer'
                             onClick={() => setShowPassword(!showPassword)}
                         >
                             {showPassword ? 'Hide' : 'Show'}
@@ -83,7 +104,7 @@ function Signup({ onSuccess, onBack }) {
                     </div>
                     <div className='relative w-full'>
                         <input
-                            className='rounded-3xl w-full border block border-black pr-10 px-3 py-2'
+                            className='block px-3 py-2 pr-10 border border-black rounded-3xl w-full'
                             type={showConfirmPassword ? 'text' : 'password'}
                             name='Confirmpassword'
                             placeholder='Confirm Password'
@@ -91,18 +112,20 @@ function Signup({ onSuccess, onBack }) {
                         />
                         <button
                             type='button'
-                            className='absolute right-5 top-1/2 -translate-y-1/2 text-black-600 text-sm cursor-pointer'
+                            className='top-1/2 right-5 absolute text-black-600 text-sm -translate-y-1/2 cursor-pointer'
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                             {showConfirmPassword ? 'Hide' : 'Show'}
                         </button>
                     </div>
 
-                    <button type="submit" className=' cursor-pointer bg-[#4377E5] text-white rounded-3xl w-full h-10 hover:bg-blue-700'>Sign up</button>
-                    <hr className='w-full border-t border-gray-300' />
-                    <div className='pointer-fine:hover:bg-gray-200 flex items-center justify-center gap-2 border rounded-3xl w-full px-2 py-3 cursor-pointer'>
-                        <p className='flex flex-row gap-3'><FcGoogle size={24} />Sign in with Google</p>
-                    </div>
+                    <button type="submit" className='bg-[#4377E5] hover:bg-blue-700 rounded-3xl w-full h-10 text-white cursor-pointer'>Sign up</button>
+                    <hr className='border-gray-300 border-t w-full' />
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => alert('Google sign in failed.')}
+                        width='100%'
+                    />
                 </form>
             </div>
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
 import { MdDrafts } from "react-icons/md";
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import API_BASE from '../../config/api';
 
 const AdminPage = () => {
     const { sidebarOpen } = useOutletContext() ?? {};
@@ -31,7 +32,7 @@ const AdminPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`http://localhost/api/tickets/org/${orgId}/drafts`, {
+            const res = await fetch(`${API_BASE}/api/tickets/org/${orgId}/drafts`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`

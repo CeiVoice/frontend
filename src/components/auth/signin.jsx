@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin } from '@react-oauth/google';
 import { IoMdArrowBack } from "react-icons/io";
+import API_BASE from '../../config/api';
 function Signin({ onSuccess, onBack, onRegister }) {
     const [showPassword, setShowPassword] = useState(false);
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const url = "http://localhost/auth/signin"
+        const url = `${API_BASE}/auth/signin`
         try {
             const res = await fetch(url, {
                 method: "POST",
@@ -31,6 +32,26 @@ function Signin({ onSuccess, onBack, onRegister }) {
         }
     }
 
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            const res = await fetch(`${API_BASE}/auth/signin/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: credentialResponse.credential })
+            });
+            const data = await res.json();
+            if (data?.success && data?.token) {
+                localStorage.setItem('authToken', data.token.token ?? data.token);
+                onSuccess?.();
+                return;
+            }
+            alert(data?.error || 'Google sign in failed.');
+        } catch (err) {
+            console.error(err);
+            alert('Something went wrong. Please try again.');
+        }
+    };
 
     return (
         <div className='flex justify-center items-center bg-linear-to-tl from-[#4377E5] to-[#BFCDE9] w-screen h-screen'>
@@ -75,9 +96,12 @@ function Signin({ onSuccess, onBack, onRegister }) {
                         </button>
                     </div>
                     <hr className='border-gray-300 border-t w-full' />
-                    <div className='flex justify-center items-center gap-2 pointer-fine:hover:bg-gray-200 px-2 py-3 border rounded-3xl w-full cursor-pointer'>
-                        <p className='flex flex-row gap-3'><FcGoogle size={24} />Sign in with Google</p>
-                    </div>
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => alert('Google sign in failed.')}
+                        useOneTap
+                        width='100%'
+                    />
                 </form>
             </div>
         </div>

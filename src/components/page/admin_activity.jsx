@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
+import API_BASE from '../../config/api';
 
 const AdminActivity = () => {
     const { sidebarOpen } = useOutletContext() ?? {};
@@ -29,7 +30,7 @@ const AdminActivity = () => {
     useEffect(() => {
         if (!org?.id) return;
         const token = localStorage.getItem('authToken');
-        fetch(`http://localhost/api/organizations/member/org/${org.id}`, {
+        fetch(`${API_BASE}/api/organizations/member/org/${org.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -47,7 +48,7 @@ const AdminActivity = () => {
     useEffect(() => {
         if (!org?.id) return;
         const token = localStorage.getItem('authToken');
-        fetch(`http://localhost/api/tickets/org/${org.id}`, {
+        fetch(`${API_BASE}/api/tickets/org/${org.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -71,7 +72,7 @@ const AdminActivity = () => {
         const token = localStorage.getItem('authToken');
         setSaving(true);
         try {
-            const res = await fetch(`http://localhost/api/tickets/${draft.TicketId}`, {
+            const res = await fetch(`${API_BASE}/api/tickets/${draft.TicketId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ Title: title, Detail: detail })
@@ -116,7 +117,7 @@ const AdminActivity = () => {
         const token = localStorage.getItem('authToken');
         setSubmitting(true);
         try {
-            const res = await fetch(`http://localhost/api/tickets/${draft.TicketId}/accept`, {
+            const res = await fetch(`${API_BASE}/api/tickets/${draft.TicketId}/accept`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

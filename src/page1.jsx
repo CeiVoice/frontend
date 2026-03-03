@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import API_BASE from './config/api';
 import Top from './components/top_bar';
 import Side from './components/side_bar';
 import Report from './components/ticket/report';
@@ -37,7 +38,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
         setIsSubmitting(true);
         try {
             const decoded = jwtDecode(token);
-            const res = await fetch('http://localhost/api/tickets/draft', {
+            const res = await fetch(`${API_BASE}/api/tickets/draft`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
