@@ -52,6 +52,26 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
     const [editAssignees, setEditAssignees] = useState(
         Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []
     );
+
+    // Fetch real assignment records (with IDs) so we can delete them
+    useEffect(() => {
+        if (!ticket.predictionId) return;
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        fetch(`${API_BASE}/api/assignments/group/${ticket.predictionId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(data => {
+                const records = data.data?.assignees || [];
+                if (records.length === 0) return;
+                setEditAssignees(prev => prev.map(a => {
+                    const rec = records.find(r => r.userId === a.userId);
+                    return rec ? { ...a, assignmentId: rec.assignmentId } : a;
+                }));
+            })
+            .catch(() => {});
+    }, [ticket.predictionId]);
     const [timeline, setTimeline] = useState([]);
 
     // Fetch ticket logs (timeline) when ticket detail opens
@@ -152,24 +172,56 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
         setIsEditing(false);
     };
 
-    const removeAssignee = (userId) => setEditAssignees(prev => prev.filter(a => a.userId !== userId));
+    const removeAssignee = async (userId) => {
+        const token = localStorage.getItem('authToken');
+        const target = editAssignees.find(a => a.userId === userId);
+        // Optimistically remove from UI
+        setEditAssignees(prev => prev.filter(a => a.userId !== userId));
+        if (!target?.assignmentId || !token) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/assignments/${target.assignmentId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.error || 'Failed to remove assignee');
+                // Rollback
+                setEditAssignees(prev => [...prev, target]);
+            }
+        } catch (e) {
+            console.error('Failed to remove assignee', e);
+            // Rollback
+            setEditAssignees(prev => [...prev, target]);
+        }
+    };
 
     const addAssignee = async (member) => {
-        setEditAssignees(prev => [...prev, member]);
         setAssigneeSearch('');
         setShowAssigneeDropdown(false);
-        // Persist: call API with predictionId scoped assignment
         const token = localStorage.getItem('authToken');
         const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
-        if (!token || !ticket.predictionId || !org?.id) return;
+        if (!token || !ticket.predictionId || !org?.id) {
+            setEditAssignees(prev => [...prev, member]);
+            return;
+        }
         try {
-            await fetch(`${API_BASE}/api/assignments`, {
+            const res = await fetch(`${API_BASE}/api/assignments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ GroupId: ticket.predictionId, AssigneeId: member.userId, OrgId: org.id })
             });
+            if (res.ok) {
+                const data = await res.json();
+                const assignmentId = data.data?.assignment?.id ?? null;
+                setEditAssignees(prev => [...prev, { ...member, assignmentId }]);
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to add assignee');
+            }
         } catch (e) {
             console.error('Failed to persist assignee', e);
+            setEditAssignees(prev => [...prev, member]);
         }
     };
 
