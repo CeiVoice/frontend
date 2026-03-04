@@ -81,7 +81,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
 
     // Fetch ticket logs (timeline) when ticket detail opens
     useEffect(() => {
-        if (!ticket.ticketId) return;
+        if (!ticket.predictionId) return;
         const token = localStorage.getItem('authToken');
         if (!token) return;
         fetch(`${API_BASE}/api/tickets/${ticket.predictionId}/logs`, {
@@ -340,7 +340,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                 <div className='flex-1'>
                     {/* Title row */}
                     <div className='flex flex-wrap items-center gap-2 mb-1'>
-                        <span className='font-bold text-gray-800 text-lg'>#{ticket.id.toString().padStart(5, '0')}</span>
+                        <span className='font-bold text-gray-800 text-lg'>#{String(ticket.predictionId).padStart(5, '0')}</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusBadge(isEditing ? editStatus : ticket.status)}`}>
                             {isEditing ? editStatus : ticket.status}
                         </span>
@@ -767,7 +767,7 @@ const Tracking = () => {
                                                     <div className='flex justify-between items-start mb-2'>
                                                         <div className='flex-1'>
                                                             <div className='flex items-center gap-2 mb-0.5'>
-                                                                <span className='font-mono text-gray-400 text-xs'>#{String(prediction.ticketId || prediction.id).padStart(5, '0')}</span>
+                                                                <span className='font-mono text-gray-400 text-xs'>#{String(prediction.predictionId).padStart(5, '0')}</span>
                                                                 <h3 className='font-bold text-gray-800'>{prediction.topicName}</h3>
                                                             </div>
                                                             <p className='text-gray-600 text-sm'>{prediction.message}</p>
