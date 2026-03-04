@@ -8,7 +8,7 @@ import API_BASE from '../../config/api';
 
 /* ─── Ticket Detail View ─────────────────────────────────────── */
 
-const TicketDetail = ({ ticket, onBack, isAdmin }) => {
+const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
     const [commentText, setCommentText] = useState('');
     const [commentType, setCommentType] = useState('public'); // 'public' | 'internal'
     const [comments, setComments] = useState([]);
@@ -29,13 +29,18 @@ const TicketDetail = ({ ticket, onBack, isAdmin }) => {
                 if (res.ok) {
                     const data = await res.json();
                     const raw = data.data?.comments || data.data || [];
-                    setComments(raw.map(c => ({
-                        id: c.id,
-                        email: `User #${c.CreatedBy}`,
-                        date: new Date(c.CreateAt || c.CreatedAt).toLocaleString(),
-                        message: c.Detail,
-                        type: c.isPublic ? 'public' : 'internal'
-                    })));
+                    const canSeeInternal = isAdmin || isAssignee;
+                    setComments(
+                        raw
+                            .map(c => ({
+                                id: c.id,
+                                email: `User #${c.CreatedBy}`,
+                                date: new Date(c.CreateAt || c.CreatedAt).toLocaleString(),
+                                message: c.Detail,
+                                type: c.isPublic ? 'public' : 'internal'
+                            }))
+                            .filter(c => c.type === 'public' || canSeeInternal)
+                    );
                 }
             } catch (e) {
                 console.error('Failed to load comments', e);
@@ -621,8 +626,14 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    // Stats: count all predictions by status
-    const allPredictions = reports.flatMap(g => g.predictions || []);
+    // Stats: count only predictions the current user can access
+    const allPredictions = reports.flatMap(g =>
+        (g.predictions || []).filter(p => {
+            const isPredAssignee = (p.assignedTo || []).some(a => a.userId === currentUserId);
+            const isOwner = p.createdBy?.userId !== null && p.createdBy?.userId === currentUserId;
+            return isAdmin || isPredAssignee || isOwner;
+        })
+    );
     const activeTickets = allPredictions.filter(p => p.status !== 'Solved' && p.status !== 'Failed').length;
     const assignedTickets = allPredictions.filter(p => p.status === 'Assigned').length;
     const solvingTickets = allPredictions.filter(p => p.status === 'Solving').length;
@@ -660,22 +671,25 @@ const Tracking = () => {
                     p.topicName?.toLowerCase().includes(search.toLowerCase()) ||
                     p.message?.toLowerCase().includes(search.toLowerCase());
                 const matchStatus = statusFilter === 'All' || p.status === statusFilter;
-                const isAssignee = (p.assignedTo || []).some(a => a.userId === currentUserId);
+                const isPredAssignee = (p.assignedTo || []).some(a => a.userId === currentUserId);
                 const isOwner = p.createdBy?.userId !== null && p.createdBy?.userId === currentUserId;
-                const canView = isAdmin || isAssignee || isOwner;
+                const canView = isAdmin || isPredAssignee || isOwner;
                 return matchSearch && matchStatus && canView;
             })
         }))
-        .filter(g =>
-            (statusFilter === 'All' || g.predictions.length > 0) &&
-            (g.title?.toLowerCase().includes(search.toLowerCase()) || g.predictions.length > 0)
-        );
+        // Always hide groups that have no accessible tickets
+        .filter(g => g.predictions.length > 0);
 
     return (
         <div className={containerClasses}>
             <div className='p-6 md:p-8'>
                 {selectedTicket ? (
-                    <TicketDetail ticket={selectedTicket} onBack={() => setSelectedTicket(null)} isAdmin={isAdmin} />
+                    <TicketDetail
+                            ticket={selectedTicket}
+                            onBack={() => setSelectedTicket(null)}
+                            isAdmin={isAdmin}
+                            isAssignee={(selectedTicket?.assignedTo || []).some(a => a.userId === currentUserId)}
+                        />
                 ) : (
                     <>
                         <div className='gap-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-10 select-none'>
