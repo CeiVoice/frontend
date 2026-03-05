@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import './App.css'
 import Signin from './components/auth/signin'
@@ -12,7 +12,7 @@ import AssigneePage from './components/page/dashboard'
 import AdminActivity from './components/page/admin_activity'
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('authToken'))
   const [userEmail, setUserEmail] = useState('')
   const [roles, setRoles] = useState({})
   const navigate = useNavigate()
@@ -20,11 +20,6 @@ function App() {
   const handleRoleChange = (email, newRole) => {
     setRoles(prev => ({ ...prev, [email]: newRole }))
   }
-
-  useEffect(() => {
-    const token = localStorage.getItem('authToken')
-    if (token) setIsLoggedIn(true)
-  }, [])
 
   const handleSignout = () => {
     localStorage.clear()

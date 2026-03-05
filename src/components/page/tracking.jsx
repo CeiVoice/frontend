@@ -633,7 +633,7 @@ const Tracking = () => {
                             message: p.Detail || matchedTicket?.Detail || '',
                             organization: selectedOrg.name || `Org #${g.OrganizationId}`,
                             orgId: g.OrganizationId,
-                            status: normalizeStatus(p.status),
+                            status: normalizeStatus(g.status),
                             date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
                             topic: g.Title,
                             assignedTo: (p.assignees || []).map(a => ({ userId: a, email: emailMap[a] || `User #${a}` })),
