@@ -377,7 +377,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                     <p className='mb-1 text-gray-600 text-sm'>{ticket.message}</p>
                     <p className='mb-3 text-gray-500 text-xs'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []).map(a => a.email).join(', ')}</span></p>
 
-                    <p className='mb-2 font-semibold text-gray-700'>Tickets:</p>
+                    <p className='mb-2 font-semibold text-gray-700'>Timeline:</p>
                     <div className='space-y-3 max-h-64 overflow-y-auto'>
                         {timeline.map((step, i) => (
                             <div key={i} className='flex items-start gap-3'>
