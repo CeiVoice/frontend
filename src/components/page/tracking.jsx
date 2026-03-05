@@ -734,8 +734,8 @@ const Tracking = () => {
                             <StatCard label="Failed" count={failedTickets} icon={<IoMdCloseCircle />} />
                         </div>
 
-                        <div className='flex gap-4 mb-8'>
-                            <div className='relative flex-1'>
+                        <div className='flex flex-col sm:flex-row gap-3 mb-8'>
+                            <div className='relative w-full sm:flex-1'>
                                 <input
                                     type="text"
                                     placeholder="Search"
