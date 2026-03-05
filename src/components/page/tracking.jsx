@@ -17,13 +17,13 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
 
     // Fetch real comments when ticket detail opens
     useEffect(() => {
-        if (!ticket.predictionId) return;
+        if (!ticket.groupId) return;
         const fetchComments = async () => {
             const token = localStorage.getItem('authToken');
             if (!token) return;
             setCommentsLoading(true);
             try {
-                const res = await fetch(`${API_BASE}/api/comments/group/${ticket.predictionId}`, {
+                const res = await fetch(`${API_BASE}/api/comments/group/${ticket.groupId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -49,7 +49,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
             }
         };
         fetchComments();
-    }, [ticket.predictionId]);
+    }, [ticket.groupId]);
 
     // ── Edit mode state ──
     const [isEditing, setIsEditing] = useState(false);
@@ -60,10 +60,10 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
 
     // Fetch real assignment records (with IDs) so we can delete them
     useEffect(() => {
-        if (!ticket.predictionId) return;
+        if (!ticket.groupId) return;
         const token = localStorage.getItem('authToken');
         if (!token) return;
-        fetch(`${API_BASE}/api/assignments/group/${ticket.predictionId}`, {
+        fetch(`${API_BASE}/api/assignments/group/${ticket.groupId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -76,15 +76,15 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                 }));
             })
             .catch(() => {});
-    }, [ticket.predictionId]);
+    }, [ticket.groupId]);
     const [timeline, setTimeline] = useState([]);
 
     // Fetch ticket logs (timeline) when ticket detail opens
     useEffect(() => {
-        if (!ticket.predictionId) return;
+        if (!ticket.groupId) return;
         const token = localStorage.getItem('authToken');
         if (!token) return;
-        fetch(`${API_BASE}/api/tickets/${ticket.predictionId}/logs`, {
+        fetch(`${API_BASE}/api/tickets/${ticket.groupId}/logs`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(r => r.json())
@@ -97,7 +97,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                 })));
             })
             .catch(e => console.error('Failed to load ticket logs', e));
-    }, [ticket.ticketId]);
+    }, [ticket.groupId]);
     const [editNote, setEditNote] = useState('');
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [assigneeSearch, setAssigneeSearch] = useState('');
@@ -206,7 +206,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
         setShowAssigneeDropdown(false);
         const token = localStorage.getItem('authToken');
         const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
-        if (!token || !ticket.predictionId || !org?.id) {
+        if (!token || !ticket.groupId || !org?.id) {
             setEditAssignees(prev => [...prev, member]);
             return;
         }
@@ -214,7 +214,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
             const res = await fetch(`${API_BASE}/api/assignments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ GroupId: ticket.predictionId, AssigneeId: member.userId, OrgId: org.id })
+                body: JSON.stringify({ GroupId: ticket.groupId, AssigneeId: member.userId, OrgId: org.id })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -237,7 +237,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
         const pad = n => String(n).padStart(2, '0');
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
 
-        if (token && ticket.predictionId) {
+        if (token && ticket.groupId) {
             try {
                 const res = await fetch(`${API_BASE}/api/comments`, {
                     method: 'POST',
@@ -246,7 +246,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                        GroupId: ticket.predictionId,
+                        GroupId: ticket.groupId,
                         Detail: commentText.trim(),
                         isPublic: commentType === 'public'
                     })
@@ -345,6 +345,9 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                             {isEditing ? editStatus : ticket.status}
                         </span>
                         <span className='bg-blue-100 px-2.5 py-0.5 rounded-full font-semibold text-blue-700 text-xs'>{ticket.organization}</span>
+                        {ticket.category && (
+                            <span className='bg-purple-100 px-2.5 py-0.5 rounded-full font-semibold text-purple-700 text-xs'>{ticket.category}</span>
+                        )}
                     </div>
                     <p className='mb-0.5 font-semibold text-gray-700'>{ticket.topicName}</p>
                     <p className='mb-1 text-gray-600 text-sm'>{ticket.message}</p>
@@ -593,6 +596,7 @@ const Tracking = () => {
                     date: g.CreateAt ? new Date(g.CreateAt).toLocaleDateString() : '',
                     assignees: g.assignees || [],
                     timeline: g.timeline || [],
+                    category: g.Category || '',
                     predictions: (g.predictions || []).map(p => {
                         const matchedTicket = (g.tickets || []).find(t => t.id === p.TicketId);
                         // p.assignees is an array of userId numbers from the backend
@@ -616,7 +620,8 @@ const Tracking = () => {
                                     : 'Unknown',
                                 userId: matchedTicket?.CreatedBy ?? null
                             },
-                            followers: []
+                            followers: [],
+                            category: p.Category || g.Category || ''
                         };
                     })
                 }));
@@ -752,6 +757,9 @@ const Tracking = () => {
                                             <div className='flex items-center gap-3'>
                                                 <h2 className='font-bold text-blue-900 text-lg'>Group #{group.id}</h2>
                                                 <span className='font-semibold text-blue-700 text-base'>— {group.title}</span>
+                                                {group.category && (
+                                                    <span className='bg-purple-100 px-2.5 py-0.5 rounded-full font-semibold text-purple-700 text-xs'>{group.category}</span>
+                                                )}
                                             </div>
                                             <p className='mt-0.5 text-blue-600 text-xs'>{group.predictions.length} ticket{group.predictions.length !== 1 ? 's' : ''} · {group.status} · {group.date}</p>
                                         </div>

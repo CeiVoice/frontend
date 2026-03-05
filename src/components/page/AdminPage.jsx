@@ -186,6 +186,11 @@ const AdminPage = () => {
                                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold select-none ${getStatusBadgeColor(draft.status)}`}>
                                                         {draft.status}
                                                     </span>
+                                                    {draft.Category && (
+                                                        <span className='bg-purple-100 px-3 py-1 rounded-full font-semibold text-purple-700 text-xs select-none'>
+                                                            {draft.Category}
+                                                        </span>
+                                                    )}
                                                     <span className='bg-orange-100 px-3 py-1 rounded-full font-semibold text-orange-700 text-xs select-none'>
                                                         Draft
                                                     </span>

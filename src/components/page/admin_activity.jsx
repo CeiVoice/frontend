@@ -15,6 +15,7 @@ const AdminActivity = () => {
     const [title, setTitle] = useState(draft?.Title ?? '');
     const [detail, setDetail] = useState(draft?.Detail ?? '');
     const [summary, setSummary] = useState(draft?.Suggest ?? '');
+    const [category, setCategory] = useState(draft?.Category ?? '');
     const [resolutionPath, setResolutionPath] = useState('');
     const [deadline, setDeadline] = useState('');
     const [assignees, setAssignees] = useState([]);
@@ -95,6 +96,7 @@ const AdminActivity = () => {
         setTitle(draft?.Title ?? '');
         setDetail(draft?.Detail ?? '');
         setSummary(draft?.Suggest ?? '');
+        setCategory(draft?.Category ?? '');
         setResolutionPath('');
         setDeadline('');
         setAssignees([]);
@@ -128,7 +130,8 @@ const AdminActivity = () => {
                     assignees: assignees.map(a => a.UserId),
                     deadline: new Date(deadline).toISOString(),
                     orgId: org?.id,
-                    groupId: selectedGroupId  // null = create new group
+                    groupId: selectedGroupId,  // null = create new group
+                    category: category.trim() || 'Uncategorized'
                 })
             });
             const data = await res.json();
@@ -179,6 +182,14 @@ const AdminActivity = () => {
                             <>
                                 <p className='text-sm md:text-base'>AI Suggestion</p>
                                 <div className='bg-blue-50 px-3 py-2 border border-blue-200 rounded-lg w-full text-gray-700 text-sm'>{draft.Suggest}</div>
+                            </>
+                        )}
+                        {draft.Category && (
+                            <>
+                                <p className='text-sm md:text-base'>AI Category</p>
+                                <div className='flex items-center gap-2'>
+                                    <span className='inline-block bg-purple-100 px-3 py-1 rounded-full font-semibold text-purple-700 text-sm'>{draft.Category}</span>
+                                </div>
                             </>
                         )}
                         <div className='flex gap-6 mt-1 text-gray-500 text-xs'>
@@ -236,6 +247,14 @@ const AdminActivity = () => {
                         <textarea rows={3} value={detail} onChange={e => setDetail(e.target.value)} className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-sm resize-none' />
                         <p className='font-bold text-sm md:text-base'>SUMMARY</p>
                         <textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-sm resize-none' />
+                        <p className='font-bold text-sm md:text-base'>CATEGORY</p>
+                        <input
+                            type='text'
+                            value={category}
+                            onChange={e => setCategory(e.target.value)}
+                            placeholder='e.g. Bug, Feature Request, Network...'
+                            className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-sm'
+                        />
                         <p className='font-bold text-sm md:text-base'>RESOLUTION PATH</p>
                         <textarea rows={4} value={resolutionPath} onChange={e => setResolutionPath(e.target.value)} className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-full text-sm resize-none' />
 
