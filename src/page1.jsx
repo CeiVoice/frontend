@@ -78,7 +78,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
                 onSignout={onSignout}
             />
             <div className='flex flex-row'>
-                <Side isOpen={sidebarOpen} />
+                <Side isOpen={sidebarOpen} onSignout={onSignout} />
                 <Outlet context={{ reports, sidebarOpen, userEmail, roles, onRoleChange }} />
             </div>
             {showReport && (
