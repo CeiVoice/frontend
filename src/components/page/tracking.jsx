@@ -334,6 +334,30 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                 ) : null}
             </div>
 
+            {/* Group ticket info banner */}
+            {ticket.groupTitle && (
+                <div className='flex flex-wrap items-center gap-2 bg-blue-50 mb-4 px-4 py-2.5 border border-blue-200 rounded-xl'>
+                    <span className='font-bold text-blue-800 text-sm'>Group #{ticket.groupId}</span>
+                    <span className='font-semibold text-blue-700 text-sm'>— {ticket.groupTitle}</span>
+                    {ticket.groupCategory && (
+                        <span className='bg-purple-100 px-2.5 py-0.5 rounded-full font-semibold text-purple-700 text-xs'>{ticket.groupCategory}</span>
+                    )}
+                    {ticket.groupStatus && (
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            ticket.groupStatus === 'Solved' ? 'bg-green-100 text-green-700'
+                            : ticket.groupStatus === 'Failed' ? 'bg-red-100 text-red-700'
+                            : ticket.groupStatus === 'Solving' ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>{ticket.groupStatus}</span>
+                    )}
+                    {ticket.groupDeadline && (
+                        <span className='ml-auto text-blue-600 text-xs'>
+                            Due {new Date(ticket.groupDeadline).toLocaleDateString()}
+                        </span>
+                    )}
+                </div>
+            )}
+
             {/* Two-column body */}
             <div className='flex lg:flex-row flex-col items-stretch gap-6'>
                 {/* Left: title + timeline */}
@@ -621,7 +645,12 @@ const Tracking = () => {
                                 userId: matchedTicket?.CreatedBy ?? null
                             },
                             followers: [],
-                            category: p.Category || g.Category || ''
+                            category: p.Category || g.Category || '',
+                            // Group-level info so TicketDetail can display the parent group
+                            groupTitle: g.title,
+                            groupStatus: normalizeStatus(g.status),
+                            groupCategory: g.Category || '',
+                            groupDeadline: g.Deadline || null
                         };
                     })
                 }));
