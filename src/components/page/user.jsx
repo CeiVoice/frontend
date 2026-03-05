@@ -202,7 +202,7 @@ const Tracking = () => {
                                     >
                                         <td className='px-4 md:px-6 py-3 md:py-4'>
                                             <div className='flex flex-col items-start gap-1.5'>
-                                                <span className='text-gray-800 text-xs md:text-sm break-all'>
+                                                <span className='text-gray-800 text-xs md:text-sm whitespace-nowrap '>
                                                     {user.email || `User #${user.userId}`}{user.isAdmin ? ' (Admin)' : ''}
                                                 </span>
                                             </div>
