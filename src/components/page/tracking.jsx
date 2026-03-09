@@ -15,6 +15,7 @@ const Tracking = () => {
 
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('All'); // All | Assigned | Solving | Solved | Failed
+    const [sortOrder, setSortOrder] = useState('none'); // none | asc | desc | overdue
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -172,7 +173,32 @@ const Tracking = () => {
             })
         }))
         // Always hide groups that have no accessible tickets
-        .filter(g => g.predictions.length > 0);
+        .filter(g => g.predictions.length > 0)
+        .sort((a, b) => {
+            if (sortOrder === 'none') return 0;
+            const now = new Date();
+            const dA = a.predictions[0]?.groupDeadline ? new Date(a.predictions[0].groupDeadline) : null;
+            const dB = b.predictions[0]?.groupDeadline ? new Date(b.predictions[0].groupDeadline) : null;
+            if (sortOrder === 'overdue') {
+                // Past due first (smallest diff from now, already negative), then no-deadline last
+                const diffA = dA ? dA - now : Infinity;
+                const diffB = dB ? dB - now : Infinity;
+                return diffA - diffB;
+            }
+            if (sortOrder === 'asc') {
+                if (!dA && !dB) return 0;
+                if (!dA) return 1;
+                if (!dB) return -1;
+                return dA - dB;
+            }
+            if (sortOrder === 'desc') {
+                if (!dA && !dB) return 0;
+                if (!dA) return 1;
+                if (!dB) return -1;
+                return dB - dA;
+            }
+            return 0;
+        });
 
     return (
         <div className={containerClasses}>
@@ -205,8 +231,22 @@ const Tracking = () => {
                                 />
                                 <span className='top-3 right-3 absolute text-gray-400'><FiSearch /></span>
                             </div>
-                            {/* Status filter pills */}
+                            {/* Sort + Status filter pills */}
                             <div className='flex flex-wrap items-center gap-2'>
+                                {[{label:'Overdue first',val:'overdue'},{label:'Due ↑',val:'asc'},{label:'Due ↓',val:'desc'}].map(({label,val}) => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setSortOrder(s => s === val ? 'none' : val)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                                            sortOrder === val
+                                                ? 'bg-gray-700 text-white border-gray-700'
+                                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                                <span className='bg-gray-300 w-px h-5' />
                                 {['All', 'Assigned', 'Solving', 'Solved', 'Failed'].map(s => (
                                     <button
                                         key={s}
