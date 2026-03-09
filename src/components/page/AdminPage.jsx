@@ -70,8 +70,9 @@ const AdminPage = () => {
     };
 
     const filtered = draftTickets.filter(d =>
-        (d.Title || '').toLowerCase().includes(search.toLowerCase()) ||
-        (d.Detail || '').toLowerCase().includes(search.toLowerCase())
+        !d.WasAccept &&
+        ((d.Title || '').toLowerCase().includes(search.toLowerCase()) ||
+        (d.Detail || '').toLowerCase().includes(search.toLowerCase()))
     );
 
     const groupedByTopic = filtered.reduce((acc, draft) => {
