@@ -360,22 +360,33 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
 
             {/* Two-column body */}
             <div className='flex lg:flex-row flex-col items-stretch gap-6'>
-                {/* Left: title + timeline */}
+                {/* Left: predict detail */}
                 <div className='flex-1'>
-                    {/* Title row */}
-                    <div className='flex flex-wrap items-center gap-2 mb-1'>
-                        <span className='font-bold text-gray-800 text-lg'>#{String(ticket.predictionId).padStart(5, '0')}</span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusBadge(isEditing ? editStatus : ticket.status)}`}>
-                            {isEditing ? editStatus : ticket.status}
-                        </span>
-                        <span className='bg-blue-100 px-2.5 py-0.5 rounded-full font-semibold text-blue-700 text-xs'>{ticket.organization}</span>
-                        {ticket.category && (
-                            <span className='bg-purple-100 px-2.5 py-0.5 rounded-full font-semibold text-purple-700 text-xs'>{ticket.category}</span>
+                    <p className='mb-4 font-bold text-[#4377E5] text-xl'>Original Request</p>
+                    <div className='flex flex-col gap-3 mb-4'>
+                        <p className='font-bold text-sm'>TITLE</p>
+                        <input readOnly value={ticket.topicName} className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg w-full text-sm' />
+                        <p className='text-sm'>Request Message</p>
+                        <textarea readOnly rows={4} value={ticket.message} className='bg-gray-100 px-3 py-2 border border-gray-300 rounded-lg w-full text-sm resize-none' />
+                        {ticket.suggest && (
+                            <>
+                                <p className='text-sm'>AI Suggestion</p>
+                                <div className='bg-blue-50 px-3 py-2 border border-blue-200 rounded-lg text-gray-700 text-sm'>{ticket.suggest}</div>
+                            </>
                         )}
+                        {ticket.category && (
+                            <>
+                                <p className='text-sm'>AI Category</p>
+                                <div>
+                                    <span className='inline-block bg-purple-100 px-3 py-1 rounded-full font-semibold text-purple-700 text-sm'>{ticket.category}</span>
+                                </div>
+                            </>
+                        )}
+                        <div className='flex gap-6 text-gray-500 text-xs'>
+                            <span>Match Score: <strong className='text-blue-600'>{Math.round((ticket.matchScore || 0) * 100)}%</strong></span>
+                            <span>Ticket: <strong>#{String(ticket.predictionId).padStart(5, '0')}</strong></span>
+                        </div>
                     </div>
-                    <p className='mb-0.5 font-semibold text-gray-700'>{ticket.topicName}</p>
-                    <p className='mb-1 text-gray-600 text-sm'>{ticket.message}</p>
-                    <p className='mb-3 text-gray-500 text-xs'>Assignee: <span className='text-gray-700'>{(Array.isArray(ticket.assignedTo) ? ticket.assignedTo : []).map(a => a.email).join(', ')}</span></p>
 
                     <p className='mb-2 font-semibold text-gray-700'>Timeline:</p>
                     <div className='space-y-3 max-h-64 overflow-y-auto'>
@@ -650,7 +661,9 @@ const Tracking = () => {
                             groupTitle: g.title,
                             groupStatus: normalizeStatus(g.status),
                             groupCategory: g.Category || '',
-                            groupDeadline: g.Deadline || null
+                            groupDeadline: g.Deadline || null,
+                            suggest: p.Suggest || '',
+                            matchScore: p.MatchScore ?? 0
                         };
                     })
                 }));
