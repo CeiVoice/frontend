@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PiSidebarSimpleThin } from "react-icons/pi";
 import { FiSearch } from "react-icons/fi";
@@ -6,6 +6,18 @@ import Dropbar from './organization/organization'
 
 function Top({ onToggleMenu, onCreate }) {
     const navigate = useNavigate();
+    const [selectedOrg, setSelectedOrg] = useState(null);
+
+    useEffect(() => {
+        const load = () => {
+            const saved = localStorage.getItem('selectedOrganization');
+            setSelectedOrg(saved ? JSON.parse(saved) : null);
+        };
+        load();
+        const iv = setInterval(load, 500);
+        return () => clearInterval(iv);
+    }, []);
+
     return (
         <header className="top-0 right-0 left-0 z-50 fixed flex items-center gap-2 sm:gap-3 md:gap-4 bg-white px-3 sm:px-4 md:px-6 border border-gray-200 w-full h-16 md:h-20">
             <div className="flex items-center gap-2 sm:gap-3 ml-1 sm:ml-0 shrink-0">
@@ -26,6 +38,7 @@ function Top({ onToggleMenu, onCreate }) {
                 </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-5 ml-auto shrink-0">
+                {selectedOrg && (
                 <button
                     type="button"
                     onClick={onCreate}
@@ -34,6 +47,7 @@ function Top({ onToggleMenu, onCreate }) {
                     <p className="text-base select-none">+</p>
                     <p className='hidden sm:block select-none'>Create</p>
                 </button>
+                )}
                 <Dropbar className="mr-5" />
 
             </div>
