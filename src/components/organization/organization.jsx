@@ -50,34 +50,12 @@ export default function Dropbar({ className = '' }) {
           return
         }
 
-        const orgsWithMembers = await Promise.all(
-          members.map(async (member) => {
-            // Fetch member count for each organization
-            let memberCount = 0
-            try {
-              const memberRes = await fetch(`${API_BASE}/api/organizations/member/org/${member.OrganizationId}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                },
-              })
-              if (memberRes.ok) {
-                const memberData = await memberRes.json()
-                memberCount = memberData.result?.length || 0
-              }
-            } catch (err) {
-              console.error('Error fetching member count:', err)
-            }
-
-            return {
-              id: member.OrganizationId,
-              name: member.OrgName,
-              memberCount: memberCount,
-              isAdmin: member.isAdmin,
-            }
-          })
-        )
+        const orgsWithMembers = members.map((member) => ({
+          id: member.OrganizationId,
+          memberId: member.id,
+          name: member.OrgName,
+          isAdmin: member.isAdmin,
+        }))
 
         console.log('Final organizations:', orgsWithMembers)
         setOrganizations(orgsWithMembers)
@@ -102,17 +80,37 @@ export default function Dropbar({ className = '' }) {
     console.log('Organization selected:', org)
   }
 
-  const handleDeleteOrganization = (orgId) => {
-    const updatedOrgs = organizations.filter(org => org.id !== orgId)
+  const handleDeleteOrganization = async (org) => {
+    const token = localStorage.getItem('authToken')
+    if (!token) return
+
+    try {
+      // Always leave the org by removing own membership.
+      // Deleting the org record directly fails when members still exist (FK constraint).
+      const res = await fetch(`${API_BASE}/api/organizations/member/${org.memberId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || err.details || 'Failed to remove organization.')
+        return
+      }
+    } catch (err) {
+      console.error('Error leaving organization:', err)
+      alert('Something went wrong. Please try again.')
+      return
+    }
+
+    const updatedOrgs = organizations.filter(o => o.id !== org.id)
     setOrganizations(updatedOrgs)
     localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
 
-    // Clear selection if deleted org was selected
-    if (selectedOrg?.id === orgId) {
+    if (selectedOrg?.id === org.id) {
       setSelectedOrg(null)
       localStorage.removeItem('selectedOrganization')
     }
-    console.log('Organization deleted:', orgId)
   }
 
   const handleOrganize_change = async (e) => {
@@ -178,17 +176,14 @@ export default function Dropbar({ className = '' }) {
                         onClick={() => handleSelectOrganization(org)}
                       >
                         <p className='font-semibold text-gray-800 text-sm'>{org.name}</p>
-                        <div className='flex justify-between text-gray-500 text-xs'>
-                          <p>Members: {org.memberCount || 0}</p>
-                          <p>{org.isAdmin ? 'Admin' : 'Member'}</p>
-                        </div>
+                        <p className='text-gray-500 text-xs'>{org.isAdmin ? 'Admin' : 'Member'}</p>
                       </div>
                       <button
                         type="button"
                         className='text-gray-400 hover:text-red-600 transition-colors shrink-0'
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteOrganization(org.id)
+                          handleDeleteOrganization(org)
                         }}
                         title="Delete organization"
                       >
