@@ -121,19 +121,19 @@ const Tracking = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
-    // Stats: count only predictions the current user can access
-    const allPredictions = reports.flatMap(g =>
-        (g.predictions || []).filter(p => {
+    // Stats: count groups the current user can access
+    const accessibleGroups = reports.filter(g =>
+        (g.predictions || []).some(p => {
             const isPredAssignee = (p.assignedTo || []).some(a => a.userId === currentUserId);
             const isOwner = p.createdBy?.userId !== null && p.createdBy?.userId === currentUserId;
             return isAdmin || isPredAssignee || isOwner;
         })
     );
-    const activeTickets = allPredictions.filter(p => p.status !== 'Solved' && p.status !== 'Failed').length;
-    const assignedTickets = allPredictions.filter(p => p.status === 'Assigned').length;
-    const solvingTickets = allPredictions.filter(p => p.status === 'Solving').length;
-    const solvedTickets = allPredictions.filter(p => p.status === 'Solved').length;
-    const failedTickets = allPredictions.filter(p => p.status === 'Failed').length;
+    const activeTickets = accessibleGroups.filter(g => g.status !== 'Solved' && g.status !== 'Failed').length;
+    const assignedTickets = accessibleGroups.filter(g => g.status === 'Assigned').length;
+    const solvingTickets = accessibleGroups.filter(g => g.status === 'Solving').length;
+    const solvedTickets = accessibleGroups.filter(g => g.status === 'Solved').length;
+    const failedTickets = accessibleGroups.filter(g => g.status === 'Failed').length;
 
     const getStatusBadgeColor = (status) => {
         switch (status) {

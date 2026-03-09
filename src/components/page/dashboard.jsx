@@ -20,6 +20,9 @@ const AssigneePage = () => {
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedOrg, setSelectedOrg] = useState(null);
+    const [timeFilter, setTimeFilter] = useState('all'); // 'all' | '30d'
+    const [sortField, setSortField] = useState('date'); // 'date' | 'status' | 'category'
+    const [sortDir, setSortDir] = useState('desc'); // 'asc' | 'desc'
 
     useEffect(() => {
         const loadOrg = () => {
@@ -57,9 +60,19 @@ const AssigneePage = () => {
             .finally(() => setLoading(false));
     }, [selectedOrg?.id]);
 
+    // Apply time filter
+    const filteredTickets = useMemo(() => {
+        if (timeFilter === '30d') {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 30);
+            return tickets.filter(t => t.date && new Date(t.date) >= cutoff);
+        }
+        return tickets;
+    }, [tickets, timeFilter]);
+
     const stats = useMemo(() => {
-        const total = tickets.length;
-        const solvedTimes = tickets
+        const total = filteredTickets.length;
+        const solvedTimes = filteredTickets
             .filter(t => t.status === 'Solved' && t.timeline?.length >= 2)
             .map(t => {
                 const first = new Date(t.timeline[0].date);
@@ -74,35 +87,68 @@ const AssigneePage = () => {
                 ? `${Math.round(avgHours * 60)} min`
                 : `${avgHours.toFixed(1)} hrs`
             : '0 min';
-        const backlog = tickets.filter(t => t.status !== 'Solved').length;
+        const backlog = filteredTickets.filter(t => t.status !== 'Solved').length;
         return { total, avgResolution, backlog };
-    }, [tickets]);
+    }, [filteredTickets]);
 
     const byStatus = useMemo(() => {
         const map = {};
-        tickets.forEach(t => { map[t.status] = (map[t.status] || 0) + 1; });
+        filteredTickets.forEach(t => { map[t.status] = (map[t.status] || 0) + 1; });
         return Object.entries(map).sort((a, b) => b[1] - a[1]);
-    }, [tickets]);
+    }, [filteredTickets]);
 
     const byCategory = useMemo(() => {
         const map = {};
-        tickets.forEach(t => { map[t.category] = (map[t.category] || 0) + 1; });
+        filteredTickets.forEach(t => { map[t.category] = (map[t.category] || 0) + 1; });
         return Object.entries(map).sort((a, b) => b[1] - a[1]);
-    }, [tickets]);
+    }, [filteredTickets]);
 
-    const recentUnresolved = useMemo(() =>
-        tickets.filter(t => t.status !== 'Solved').slice(0, 5),
-        [tickets]
-    );
+    const handleSort = (field) => {
+        if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortField(field); setSortDir('asc'); }
+    };
+    const SortIcon = ({ field }) => {
+        if (sortField !== field) return <span className='ml-1 text-gray-300'>↕</span>;
+        return <span className='ml-1 text-blue-500'>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+    };
+
+    const sortedTickets = useMemo(() => {
+        return [...filteredTickets].sort((a, b) => {
+            const dir = sortDir === 'asc' ? 1 : -1;
+            if (sortField === 'date') {
+                return dir * ((a.date ? new Date(a.date) : 0) - (b.date ? new Date(b.date) : 0));
+            }
+            const valA = (sortField === 'status' ? a.status : a.category) || '';
+            const valB = (sortField === 'status' ? b.status : b.category) || '';
+            return dir * valA.localeCompare(valB);
+        });
+    }, [filteredTickets, sortField, sortDir]);
 
     return (
         <div className={containerClasses}>
             <div className='space-y-6 p-4 sm:p-6 md:p-8'>
 
-                {/* Title */}
-                <h1 className='font-bold text-gray-800 text-xl md:text-2xl'>
-                    Dashboard Overview {selectedOrg && <span className='font-medium text-gray-500 text-base'>— {selectedOrg.name}</span>}
-                </h1>
+                {/* Title + time filter */}
+                <div className='flex flex-wrap justify-between items-center gap-3'>
+                    <h1 className='font-bold text-gray-800 text-xl md:text-2xl'>
+                        Dashboard Overview {selectedOrg && <span className='font-medium text-gray-500 text-base'>— {selectedOrg.name}</span>}
+                    </h1>
+                    <div className='flex gap-2'>
+                        {[{ label: 'All Time', val: 'all' }, { label: 'Last 30 Days', val: '30d' }].map(({ label, val }) => (
+                            <button
+                                key={val}
+                                onClick={() => setTimeFilter(val)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                                    timeFilter === val
+                                        ? 'bg-[#4377E5] text-white border-[#4377E5]'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
                 {!selectedOrg && (
                     <div className='bg-white p-8 border border-gray-200 rounded-2xl text-center'>
@@ -160,42 +206,52 @@ const AssigneePage = () => {
                         </div>
                     </div>
 
-                    {/* Recent Unresolved Tickets */}
+                    {/* All Groups Table */}
                     <div className='bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden'>
-                        <div className='p-5 pb-3'>
-                            <h2 className='font-bold text-gray-800 text-base'>Recent Unresolved Ticket</h2>
+                        <div className='flex justify-between items-center p-5 pb-3'>
+                            <h2 className='font-bold text-gray-800 text-base'>All Groups</h2>
+                            <span className='text-gray-400 text-xs'>{filteredTickets.length} group{filteredTickets.length !== 1 ? 's' : ''}</span>
                         </div>
                         <div className='overflow-x-auto'>
-                            <table className='w-full min-w-130'>
+                            <table className='w-full min-w-[36rem]'>
                                 <thead>
                                     <tr className='border-gray-100 border-t'>
                                         <th className='px-5 py-3 font-semibold text-gray-400 text-xs text-left'>ID</th>
                                         <th className='px-5 py-3 font-semibold text-gray-400 text-xs text-left'>Title</th>
-                                        <th className='px-5 py-3 font-semibold text-gray-400 text-xs text-left'>Status</th>
-                                        <th className='px-5 py-3 font-semibold text-gray-400 text-xs text-left'>Category</th>
-                                        <th className='px-5 py-3 font-semibold text-gray-400 text-xs text-left'>Date</th>
+                                        <th
+                                            className='px-5 py-3 font-semibold text-gray-400 hover:text-gray-600 text-xs text-left cursor-pointer select-none'
+                                            onClick={() => handleSort('status')}
+                                        >Status <SortIcon field='status' /></th>
+                                        <th
+                                            className='px-5 py-3 font-semibold text-gray-400 hover:text-gray-600 text-xs text-left cursor-pointer select-none'
+                                            onClick={() => handleSort('category')}
+                                        >Category <SortIcon field='category' /></th>
+                                        <th
+                                            className='px-5 py-3 font-semibold text-gray-400 hover:text-gray-600 text-xs text-left cursor-pointer select-none'
+                                            onClick={() => handleSort('date')}
+                                        >Date <SortIcon field='date' /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentUnresolved.map((ticket, idx) => (
+                                    {sortedTickets.map((ticket, idx) => (
                                         <tr key={ticket.id} className={`border-t border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
-                                            <td className='px-5 py-4 font-semibold text-gray-700 text-sm'>#{String(ticket.id).padStart(4, '0')}</td>
-                                            <td className='px-5 py-4 font-semibold text-gray-800 text-sm'>{ticket.topicName}</td>
-                                            <td className='px-5 py-4'>
+                                            <td className='px-5 py-3 font-semibold text-gray-700 text-sm'>#{String(ticket.id).padStart(4, '0')}</td>
+                                            <td className='px-5 py-3 font-semibold text-gray-800 text-sm'>{ticket.topicName}</td>
+                                            <td className='px-5 py-3'>
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(ticket.status)}`}>
                                                     {ticket.status}
                                                 </span>
                                             </td>
-                                            <td className='px-5 py-4 text-gray-600 text-sm'>{ticket.topic}</td>
-                                            <td className='px-5 py-4 text-gray-600 text-sm'>
-                                                {new Date(ticket.date).toLocaleDateString('en-GB').replace(/\//g, '/')}
+                                            <td className='px-5 py-3 text-gray-600 text-sm'>{ticket.category}</td>
+                                            <td className='px-5 py-3 text-gray-600 text-sm'>
+                                                {ticket.date ? new Date(ticket.date).toLocaleDateString('en-GB') : '—'}
                                             </td>
                                         </tr>
                                     ))}
-                                    {recentUnresolved.length === 0 && (
+                                    {sortedTickets.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className='px-5 py-10 text-gray-400 text-sm text-center'>
-                                                No unresolved tickets.
+                                                No groups found.
                                             </td>
                                         </tr>
                                     )}
