@@ -734,8 +734,8 @@ const Tracking = () => {
                             <StatCard label="Failed" count={failedTickets} icon={<IoMdCloseCircle />} />
                         </div>
 
-                        <div className='flex flex-col sm:flex-row gap-3 mb-8'>
-                            <div className='relative w-full sm:flex-1'>
+                        <div className='flex sm:flex-row flex-col gap-3 mb-8'>
+                            <div className='relative sm:flex-1 w-full'>
                                 <input
                                     type="text"
                                     placeholder="Search"
@@ -809,9 +809,6 @@ const Tracking = () => {
                                                             </div>
                                                             <p className='text-gray-600 text-sm'>{prediction.message}</p>
                                                         </div>
-                                                        <span className={`ml-3 shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(prediction.status)}`}>
-                                                            {prediction.status}
-                                                        </span>
                                                     </div>
                                                     <div className='flex justify-between items-center pt-2 border-gray-100 border-t'>
                                                         <span className='font-semibold text-gray-500 text-xs'>{prediction.organization}</span>
