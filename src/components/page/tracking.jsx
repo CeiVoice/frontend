@@ -243,11 +243,15 @@ const Tracking = () => {
                                 {filteredGroups.map((group) => (
                                     <div key={group.id} className='bg-blue-50 border border-blue-200 rounded-xl overflow-hidden'>
                                         <div className='bg-blue-100 px-6 py-3 border-blue-200 border-b'>
-                                            <div className='flex items-center gap-3'>
+                                            <div className='flex flex-wrap items-center gap-2'>
                                                 <h2 className='font-bold text-blue-900 text-lg'>Group #{group.id}</h2>
                                                 <span className='font-semibold text-blue-700 text-base'>— {group.title}</span>
                                                 {group.category && (
                                                     <span className='bg-purple-100 px-2.5 py-0.5 rounded-full font-semibold text-purple-700 text-xs'>{group.category}</span>
+                                                )}
+                                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(group.status)}`}>{group.status}</span>
+                                                {group.predictions[0]?.groupDeadline && (
+                                                    <span className='ml-auto text-blue-600 text-xs'>Due {new Date(group.predictions[0].groupDeadline).toLocaleDateString()}</span>
                                                 )}
                                             </div>
                                             <p className='mt-0.5 text-blue-600 text-xs'>{group.predictions.length} ticket{group.predictions.length !== 1 ? 's' : ''} · {group.status} · {group.date}</p>
@@ -265,7 +269,7 @@ const Tracking = () => {
                                                         <div className='flex-1'>
                                                             <div className='flex items-center gap-2 mb-0.5'>
                                                                 <span className='font-mono text-gray-400 text-xs'>#{String(prediction.predictionId).padStart(5, '0')}</span>
-                                                                <h3 className='font-bold text-gray-800'>{prediction.topicName} test</h3>
+                                                                <h3 className='font-bold text-gray-800'>{prediction.topicName}</h3>
                                                             </div>
                                                             <p className='text-gray-600 text-sm'>{prediction.message}</p>
                                                         </div>
