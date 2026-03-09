@@ -5,6 +5,7 @@ const Side = ({ isOpen = true, onSignout }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [hasOrg, setHasOrg] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [showSignout, setShowSignout] = useState(false)
 
@@ -22,6 +23,7 @@ const Side = ({ isOpen = true, onSignout }) => {
     const load = () => {
       const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null')
       setIsAdmin(org?.isAdmin === true)
+      setHasOrg(!!org)
     }
     load()
     const iv = setInterval(load, 500)
@@ -39,6 +41,7 @@ const Side = ({ isOpen = true, onSignout }) => {
       <div className='flex flex-col h-full'>
         <div className='flex flex-col gap-6 px-6 flex-1 overflow-y-auto'>
           <button onClick={() => navigate('/tracking')} className={`mt-8 ${linkClass('/tracking')}`}>Tickets</button>
+          {hasOrg && <button onClick={() => navigate('/my-dashboard')} className={linkClass('/my-dashboard')}>My Dashboard</button>}
           {isAdmin && <button onClick={() => navigate('/user')} className={linkClass('/user')}>User</button>}
           {isAdmin && <button onClick={() => navigate('/admin')} className={linkClass('/admin')}>Admin</button>}
           {isAdmin && <button onClick={() => navigate('/dashboard')} className={linkClass('/dashboard')}>Dashboard</button>}

@@ -9,6 +9,7 @@ import TrackingPage from './components/page/tracking'
 import AdminPage from './components/page/AdminPage'
 import AssigneePage from './components/page/dashboard'
 import AdminActivity from './components/page/admin_activity'
+import Userdashboard from './components/page/userdashboard'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('authToken'))
@@ -66,6 +67,7 @@ function App() {
         <Route path="tracking" element={<TrackingPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="admin-activity" element={<AdminActivity />} />
+        <Route path="my-dashboard" element={<Userdashboard />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/signin'} replace />} />
     </Routes>
