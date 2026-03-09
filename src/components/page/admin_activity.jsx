@@ -57,6 +57,17 @@ const AdminActivity = () => {
             .catch(console.error);
     }, [org?.id]);
 
+    // Pre-populate with the AI-suggested assignee once members are loaded
+    useEffect(() => {
+        if (allMembers.length === 0 || !draft?.assignee) return;
+        const suggested = allMembers.find(m => m.UserId === draft.assignee);
+        if (suggested) {
+            setAssignees(prev =>
+                prev.find(a => a.UserId === suggested.UserId) ? prev : [...prev, suggested]
+            );
+        }
+    }, [allMembers, draft?.assignee]);
+
     const filtered = allMembers.filter(
         m => m.Email.toLowerCase().includes(assigneeSearch.toLowerCase()) &&
             !assignees.find(a => a.UserId === m.UserId)
@@ -262,6 +273,9 @@ const AdminActivity = () => {
                             {assignees.map((a) => (
                                 <span key={a.UserId} className='flex items-center gap-1 bg-blue-50 px-2.5 py-0.5 border border-blue-300 rounded-full font-medium text-blue-700 text-xs'>
                                     {a.Email}
+                                    {a.UserId === draft?.assignee && (
+                                        <span className='bg-purple-100 ml-0.5 px-1 rounded text-[10px] text-purple-600'>AI</span>
+                                    )}
                                     <button onClick={() => removeAssignee(a.UserId)} className='ml-0.5 font-bold text-blue-400 hover:text-red-500 leading-none'>×</button>
                                 </span>
                             ))}

@@ -24,7 +24,7 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
         setShowConfirmation(true);
     };
 
-    const handleConfirm = async () => {
+    const handleConfirm = () => {
         const token = localStorage.getItem('authToken');
         const org = JSON.parse(localStorage.getItem('selectedOrganization') || 'null');
 
@@ -35,38 +35,30 @@ function Layout({ userEmail, onSignout, roles, onRoleChange }) {
             return;
         }
 
-        setIsSubmitting(true);
-        try {
-            const decoded = jwtDecode(token);
-            const res = await fetch(`${API_BASE}/api/tickets/draft`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    Title: pendingMessage.topicName,
-                    Detail: pendingMessage.message,
-                    CreatedBy: decoded.id,
-                    OrgId: org.id
-                })
-            });
+        // Close modal immediately, fire request in background
+        setShowConfirmation(false);
+        setShowSuccess(true);
 
-            if (!res.ok) {
-                const err = await res.json();
-                alert(err.error || 'Failed to create ticket');
-                return;
-            }
-
-            setSubmitError(null);
-            setShowConfirmation(false);
-            setShowSuccess(true);
-        } catch (err) {
-            console.error('Submit ticket error:', err);
-            alert('Failed to submit ticket. Please try again.');
-        } finally {
-            setIsSubmitting(false);
-        }
+        const decoded = jwtDecode(token);
+        fetch(`${API_BASE}/api/tickets/draft`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                Title: pendingMessage.topicName,
+                Detail: pendingMessage.message,
+                CreatedBy: decoded.id,
+                OrgId: org.id
+            })
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { console.error('Failed to create ticket:', err.error); });
+                }
+            })
+            .catch(err => console.error('Submit ticket error:', err));
     };
 
     return (

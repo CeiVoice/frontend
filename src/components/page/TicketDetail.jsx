@@ -317,7 +317,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                             Cancel
                         </button>
                     </div>
-                ) : isAdmin ? (
+                ) : (isAdmin || isAssignee) ? (
                     <button onClick={() => setIsEditing(true)} className='hover:bg-gray-50 px-4 py-1.5 border border-gray-300 rounded-lg text-gray-700 text-sm'>
                         Edit
                     </button>
@@ -466,8 +466,8 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
                         </div>
                     </div>
 
-                    {/* Status buttons + note — only visible to admins in edit mode */}
-                    <div className={`${isAdmin && isEditing ? '' : 'invisible pointer-events-none'}`}>
+                    {/* Status buttons + note — only visible to admins/assignees in edit mode */}
+                    <div className={`${(isAdmin || isAssignee) && isEditing ? '' : 'invisible pointer-events-none'}`}>
                         <div className='flex flex-wrap gap-2 mb-2'>
                             {STATUS_OPTIONS.map(s => (
                                 <button
@@ -514,7 +514,7 @@ const TicketDetail = ({ ticket, onBack, isAdmin, isAssignee }) => {
 
                         {/* Comment input */}
                         <div className='flex flex-wrap items-center gap-2'>
-                            {isAdmin && (
+                            {(isAdmin || isAssignee) && (
                                 <button
                                     onClick={() => setCommentType(t => t === 'public' ? 'internal' : 'public')}
                                     className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${commentType === 'internal'
