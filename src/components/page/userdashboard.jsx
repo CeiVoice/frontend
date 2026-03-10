@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import API_BASE from '../../config/api';
+import SolvedFailedGraph from './graph';
 
 const statusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -152,6 +153,9 @@ const Userdashboard = () => {
                             <p className='font-bold text-red-500 text-4xl'>{stats.recentFailed}</p>
                         </div>
                     </div>
+
+                    {/* chart */}
+                    <SolvedFailedGraph myGroups={myGroups} />
 
                     {/* Performance Summary */}
                     <div className='bg-white shadow-sm p-6 border border-gray-200 rounded-2xl'>
