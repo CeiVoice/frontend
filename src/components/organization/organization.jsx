@@ -72,6 +72,7 @@ export default function Dropbar({ className = '' }) {
 
             return {
               id: member.OrganizationId,
+              memberId: member.id,
               name: member.OrgName,
               memberCount: memberCount,
               isAdmin: member.isAdmin,
@@ -102,17 +103,38 @@ export default function Dropbar({ className = '' }) {
     console.log('Organization selected:', org)
   }
 
-  const handleDeleteOrganization = (orgId) => {
-    const updatedOrgs = organizations.filter(org => org.id !== orgId)
-    setOrganizations(updatedOrgs)
-    localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
+  const handleDeleteOrganization = async (org) => {
+    const token = localStorage.getItem('authToken')
+    if (!token) return
 
-    // Clear selection if deleted org was selected
-    if (selectedOrg?.id === orgId) {
-      setSelectedOrg(null)
-      localStorage.removeItem('selectedOrganization')
+    try {
+      const res = await fetch(`${API_BASE}/api/organizations/member/${org.memberId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        console.error('Failed to leave organization:', err)
+        alert(err.error || 'Failed to leave organization')
+        return
+      }
+
+      const updatedOrgs = organizations.filter(o => o.id !== org.id)
+      setOrganizations(updatedOrgs)
+      localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
+
+      if (selectedOrg?.id === org.id) {
+        setSelectedOrg(null)
+        localStorage.removeItem('selectedOrganization')
+      }
+    } catch (err) {
+      console.error('Error leaving organization:', err)
+      alert('Something went wrong. Please try again.')
     }
-    console.log('Organization deleted:', orgId)
   }
 
   const handleOrganize_change = async (e) => {
@@ -188,7 +210,7 @@ export default function Dropbar({ className = '' }) {
                         className='text-gray-400 hover:text-red-600 transition-colors shrink-0'
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteOrganization(org.id)
+                          handleDeleteOrganization(org)
                         }}
                         title="Delete organization"
                       >

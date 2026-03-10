@@ -81,13 +81,17 @@ const AdminActivity = () => {
     const removeAssignee = (userId) => setAssignees(prev => prev.filter(a => a.UserId !== userId));
 
     const handleSave = async () => {
+        if (!draft?.id) {
+            alert('Missing prediction data.');
+            return;
+        }
         const token = localStorage.getItem('authToken');
         setSaving(true);
         try {
-            const res = await fetch(`${API_BASE}/api/tickets/${draft.TicketId}`, {
-                method: 'PATCH',
+            const res = await fetch(`${API_BASE}/api/tickets/predictions/${draft.id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ Title: title, Detail: detail })
+                body: JSON.stringify({ Title: title, Detail: detail, Suggest: summary, Category: category })
             });
             const data = await res.json();
             if (res.ok) {
