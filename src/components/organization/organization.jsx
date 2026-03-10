@@ -55,11 +55,30 @@ export default function Dropbar({ className = '' }) {
           memberId: member.id,
           name: member.OrgName,
           isAdmin: member.isAdmin,
+          memberCount: null,
         }))
 
-        console.log('Final organizations:', orgsWithMembers)
-        setOrganizations(orgsWithMembers)
-        localStorage.setItem('organizations', JSON.stringify(orgsWithMembers))
+        // Fetch member counts for all orgs in parallel
+        const counts = await Promise.all(
+          orgsWithMembers.map(async (org) => {
+            try {
+              const r = await fetch(`${API_BASE}/api/organizations/member/org/${org.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+              })
+              if (r.ok) {
+                const d = await r.json()
+                return (d.result ?? []).length
+              }
+            } catch (_) { }
+            return null
+          })
+        )
+
+        const orgsWithCounts = orgsWithMembers.map((org, i) => ({ ...org, memberCount: counts[i] }))
+
+        console.log('Final organizations:', orgsWithCounts)
+        setOrganizations(orgsWithCounts)
+        localStorage.setItem('organizations', JSON.stringify(orgsWithCounts))
       } else {
         const errorData = await res.json()
         console.error('Failed to fetch organizations:', res.status, errorData)
@@ -176,7 +195,14 @@ export default function Dropbar({ className = '' }) {
                         onClick={() => handleSelectOrganization(org)}
                       >
                         <p className='font-semibold text-gray-800 text-sm'>{org.name}</p>
-                        <p className='text-gray-500 text-xs'>{org.isAdmin ? 'Admin' : 'Member'}</p>
+                        <div className='flex items-center justify-between text-xs text-gray-500'>
+                          <span>
+                            {org.memberCount !== null && org.memberCount !== undefined
+                              ? `${org.memberCount} ${org.memberCount === 1 ? 'member' : 'members'}`
+                              : ''}
+                          </span>
+                          <span>{org.isAdmin ? 'Admin' : 'Member'}</span>
+                        </div>
                       </div>
                       <button
                         type="button"
