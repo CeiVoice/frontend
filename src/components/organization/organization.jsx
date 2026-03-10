@@ -50,34 +50,25 @@ export default function Dropbar({ className = '' }) {
           return
         }
 
-        const orgsWithMembers = members.map((member) => ({
-          id: member.OrganizationId,
-          memberId: member.id,
-          name: member.OrgName,
-          isAdmin: member.isAdmin,
-          memberCount: null,
-        }))
-
-        // Fetch member counts for all orgs in parallel
-        const counts = await Promise.all(
-          orgsWithMembers.map(async (org) => {
+        const orgsWithCounts = await Promise.all(
+          members.map(async (member) => {
+            let memberCount = 0
             try {
-              const r = await fetch(`${API_BASE}/api/organizations/member/org/${org.id}`, {
+              const r = await fetch(`${API_BASE}/api/organizations/member/org/${member.OrganizationId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
               })
               if (r.ok) {
                 const d = await r.json()
-                return (d.result ?? []).length
+                memberCount = (d.result ?? []).length
               }
             } catch (err) {
               console.error('Error fetching member count:', err)
             }
-
             return {
               id: member.OrganizationId,
               memberId: member.id,
               name: member.OrgName,
-              memberCount: memberCount,
+              memberCount,
               isAdmin: member.isAdmin,
             }
           })
