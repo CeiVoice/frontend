@@ -50,21 +50,24 @@ export default function Dropbar({ className = '' }) {
           return
         }
 
-        const orgsWithMembers = await Promise.all(
-          members.map(async (member) => {
-            // Fetch member count for each organization
-            let memberCount = 0
+        const orgsWithMembers = members.map((member) => ({
+          id: member.OrganizationId,
+          memberId: member.id,
+          name: member.OrgName,
+          isAdmin: member.isAdmin,
+          memberCount: null,
+        }))
+
+        // Fetch member counts for all orgs in parallel
+        const counts = await Promise.all(
+          orgsWithMembers.map(async (org) => {
             try {
-              const memberRes = await fetch(`${API_BASE}/api/organizations/member/org/${member.OrganizationId}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                },
+              const r = await fetch(`${API_BASE}/api/organizations/member/org/${org.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
               })
-              if (memberRes.ok) {
-                const memberData = await memberRes.json()
-                memberCount = memberData.result?.length || 0
+              if (r.ok) {
+                const d = await r.json()
+                return (d.result ?? []).length
               }
             } catch (err) {
               console.error('Error fetching member count:', err)
@@ -80,9 +83,9 @@ export default function Dropbar({ className = '' }) {
           })
         )
 
-        console.log('Final organizations:', orgsWithMembers)
-        setOrganizations(orgsWithMembers)
-        localStorage.setItem('organizations', JSON.stringify(orgsWithMembers))
+        console.log('Final organizations:', orgsWithCounts)
+        setOrganizations(orgsWithCounts)
+        localStorage.setItem('organizations', JSON.stringify(orgsWithCounts))
       } else {
         const errorData = await res.json()
         console.error('Failed to fetch organizations:', res.status, errorData)
@@ -103,38 +106,17 @@ export default function Dropbar({ className = '' }) {
     console.log('Organization selected:', org)
   }
 
-  const handleDeleteOrganization = async (org) => {
-    const token = localStorage.getItem('authToken')
-    if (!token) return
+  const handleDeleteOrganization = (orgId) => {
+    const updatedOrgs = organizations.filter(org => org.id !== orgId)
+    setOrganizations(updatedOrgs)
+    localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
 
-    try {
-      const res = await fetch(`${API_BASE}/api/organizations/member/${org.memberId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        console.error('Failed to leave organization:', err)
-        alert(err.error || 'Failed to leave organization')
-        return
-      }
-
-      const updatedOrgs = organizations.filter(o => o.id !== org.id)
-      setOrganizations(updatedOrgs)
-      localStorage.setItem('organizations', JSON.stringify(updatedOrgs))
-
-      if (selectedOrg?.id === org.id) {
-        setSelectedOrg(null)
-        localStorage.removeItem('selectedOrganization')
-      }
-    } catch (err) {
-      console.error('Error leaving organization:', err)
-      alert('Something went wrong. Please try again.')
+    // Clear selection if deleted org was selected
+    if (selectedOrg?.id === orgId) {
+      setSelectedOrg(null)
+      localStorage.removeItem('selectedOrganization')
     }
+    console.log('Organization deleted:', orgId)
   }
 
   const handleOrganize_change = async (e) => {
@@ -200,9 +182,13 @@ export default function Dropbar({ className = '' }) {
                         onClick={() => handleSelectOrganization(org)}
                       >
                         <p className='font-semibold text-gray-800 text-sm'>{org.name}</p>
-                        <div className='flex justify-between text-gray-500 text-xs'>
-                          <p>Members: {org.memberCount || 0}</p>
-                          <p>{org.isAdmin ? 'Admin' : 'Member'}</p>
+                        <div className='flex justify-between items-center text-gray-500 text-xs'>
+                          <span>
+                            {org.memberCount !== null && org.memberCount !== undefined
+                              ? `${org.memberCount} ${org.memberCount === 1 ? 'member' : 'members'}`
+                              : ''}
+                          </span>
+                          <span>{org.isAdmin ? 'Admin' : 'Member'}</span>
                         </div>
                       </div>
                       <button

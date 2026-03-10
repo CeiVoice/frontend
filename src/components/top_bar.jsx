@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PiSidebarSimpleThin } from "react-icons/pi";
-import { FiSearch } from "react-icons/fi";
 import Dropbar from './organization/organization'
-
+import frameLogo from '../assets/Frame_7.png';
 function Top({ onToggleMenu, onCreate }) {
     const navigate = useNavigate();
     const [selectedOrg, setSelectedOrg] = useState(null);
@@ -32,8 +31,7 @@ function Top({ onToggleMenu, onCreate }) {
                         className="flex flex-row cursor-pointer"
                         onClick={() => navigate('/home')}
                     >
-                        <p className="font-serif text-black text-xl sm:text-2xl select-none">CEI</p>
-                        <p className="ml-1 font-serif text-[#4377E5] text-xl sm:text-2xl select-none">Voice</p>
+                        <img src={frameLogo} alt="Frame" className='w-auto h-auto' />
                     </button>
                 </div>
             </div>

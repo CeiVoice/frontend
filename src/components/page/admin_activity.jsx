@@ -152,6 +152,7 @@ const AdminActivity = () => {
             const data = await res.json();
             if (res.ok) {
                 alert('Ticket submitted and assigned successfully!');
+                navigate('/admin');
             } else {
                 alert(data?.error || 'Failed to submit ticket.');
             }
