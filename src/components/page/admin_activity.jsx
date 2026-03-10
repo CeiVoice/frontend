@@ -91,7 +91,7 @@ const AdminActivity = () => {
             const res = await fetch(`${API_BASE}/api/tickets/predictions/${draft.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ Title: title, Detail: detail, Suggest: summary, Category: category })
+                body: JSON.stringify({ Title: title, Detail: detail, Suggest: summary, Category: category, orgId: org?.id })
             });
             const data = await res.json();
             if (res.ok) {
